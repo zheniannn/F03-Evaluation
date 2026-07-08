@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Large generated CSVs are never committed -- only directory structure.
+data/active/radar_truth_relocated/*.csv
+data/active/sim_detections_relocated/*.csv
+data/active/tracks_kalman/*.csv
+
+!data/active/radar_truth_relocated/.gitkeep
+!data/active/sim_detections_relocated/.gitkeep
+!data/active/tracks_kalman/.gitkeep

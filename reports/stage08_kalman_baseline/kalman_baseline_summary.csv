@@ -1,0 +1,2 @@
+frames,detections_in,tracks_total,tracks_confirmed,true_tracks,false_tracks,false_tracks_per_frame,trackable_trajectories,covered_trajectories,trajectory_coverage,fragmentation,mean_true_track_purity,target_det_absorption,clutter_det_absorption,date,threshold_db,tracks_file
+1000,129171,22885,2369,2176,193,0.193,1336,1332,0.9970059880239521,1.6336336336336337,0.998378529803856,0.9803923367710207,0.04003369172075509,2022-06-06,0.0,/home/tzhen/projects/PLSWORK/F03-Evaluation/data/active/tracks_kalman/tracks_2022-06-06_thr_0p0dB.csv
