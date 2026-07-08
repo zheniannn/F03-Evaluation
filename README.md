@@ -1,14 +1,14 @@
 # F03-Evaluation
 
 Evaluation stages of the light-GA radar pipeline. **F03-Evaluation consumes
-outputs from F02-RADAR** (which ends at stage 6 synthetic detections):
+outputs from F02-Radar** (which ends at stage 6 synthetic detections):
 
 - **Stage 07** — threshold-only baseline evaluation (no tracking)
 - **Stage 08** — constant-velocity Kalman detect-then-track baseline
 - **Stage 09+** (future) — physics-guided / advanced tracking evaluation
 
-Upstream: F01-PREPROCESSING owns stages 1–4 (ADS-B → uniform trajectories),
-F02-RADAR owns stages 5–6 (radar truth → synthetic detections).
+Upstream: F01-Preprocessing owns stages 1–4 (ADS-B → uniform trajectories),
+F02-Radar owns stages 5–6 (radar truth → synthetic detections).
 
 ## Structure
 
@@ -32,7 +32,7 @@ F03-Evaluation/
     └── stage08_kalman_baseline/           # stage-8 summary + report
 ```
 
-## Input contract from F02-RADAR
+## Input contract from F02-Radar
 
 Required stage-5 truth inputs:
 
@@ -53,16 +53,16 @@ radial-velocity, per-component errors, snr_db, …). The `is_target` /
 `trajectory_id` labels are used **only for evaluation**, never by the
 tracker.
 
-## How to copy inputs from F02-RADAR
+## How to copy inputs from F02-Radar
 
 ```bash
-cp ../F02-RADAR/data/active/radar_truth_relocated/radar_truth_*.csv \
+cp ../F02-Radar/data/active/radar_truth_relocated/radar_truth_*.csv \
    data/active/radar_truth_relocated/
 
-cp ../F02-RADAR/data/active/sim_detections_relocated/detections_*.csv \
+cp ../F02-Radar/data/active/sim_detections_relocated/detections_*.csv \
    data/active/sim_detections_relocated/
 
-cp ../F02-RADAR/data/active/sim_detections_relocated/sim_detection_summary.csv \
+cp ../F02-Radar/data/active/sim_detections_relocated/sim_detection_summary.csv \
    data/active/sim_detections_relocated/
 ```
 
