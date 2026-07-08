@@ -111,11 +111,57 @@ python scripts/08_run_kalman_baseline.py \
   --overwrite
 ```
 
-Track CSVs go to `data/active/tracks_kalman/` (git-ignored); the summary
-CSV and Markdown report go to `reports/stage08_kalman_baseline/`.
-`--self-test` runs without real data. Documented baseline simplifications
-(stage 9+ targets): isotropic measurement noise, Euclidean rather than
-Mahalanobis gating, radial velocity unused.
+Track CSVs go to `data/active/tracks_kalman/` (git-ignored); the metrics
+CSV (`kalman_metrics_by_day.csv`, accumulated across runs) and Markdown
+report go to `reports/stage08_kalman_baseline/`. `--self-test` runs
+without real data. Documented baseline simplifications (stage 9+ targets):
+isotropic measurement noise, Euclidean rather than Mahalanobis gating,
+radial velocity unused.
+
+### Recommended evaluation sequence
+
+Run stage 8 in controlled increments — do not jump to the full 4-day ×
+6-threshold sweep:
+
+1. **One full day at 0 dB:**
+
+```bash
+python scripts/08_run_kalman_baseline.py \
+  --detections-dir data/active/sim_detections_relocated \
+  --truth-dir data/active/radar_truth_relocated \
+  --tracks-dir data/active/tracks_kalman \
+  --report-dir reports/stage08_kalman_baseline \
+  --threshold-db 0 \
+  --date 2022-06-06 \
+  --overwrite
+```
+
+2. **One-day threshold sweep at −5, 0, 3, 6 dB:**
+
+```bash
+python scripts/08_run_kalman_baseline.py \
+  --detections-dir data/active/sim_detections_relocated \
+  --truth-dir data/active/radar_truth_relocated \
+  --tracks-dir data/active/tracks_kalman \
+  --report-dir reports/stage08_kalman_baseline \
+  --threshold-db -5 0 3 6 \
+  --date 2022-06-06 \
+  --overwrite
+```
+
+3. **Compare stage-7 frame-level metrics to stage-8 track-level metrics**
+   (they measure different things — never equate frame Pd with track
+   detection rate):
+
+```bash
+python scripts/08_compare_stage07_stage08.py \
+  --stage07 reports/stage07_threshold_only/threshold_by_day.csv \
+  --stage08 reports/stage08_kalman_baseline/kalman_metrics_by_day.csv \
+  --date 2022-06-06 \
+  --output-prefix reports/stage08_kalman_baseline/stage07_vs_stage08_2022-06-06
+```
+
+4. **Only then** expand to all days and thresholds.
 
 ## Audit
 

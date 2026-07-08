@@ -13,9 +13,11 @@ Runs a classical multi-target tracker over one stage-6 detection stream:
     is confirmed after `confirm_hits` total hits and deleted after
     `max_misses` consecutive misses (it coasts on prediction in between).
 
-The tracker NEVER sees truth labels: is_target / trajectory_id are carried
-through to the output rows purely so utils/track_eval.py can score the
-result afterwards.
+The tracker NEVER sees truth labels: is_target / trajectory_id / the truth
+position are carried through to the output rows purely so
+utils/track_eval.py can score the result afterwards (pos_error_m is the
+distance between the POSTERIOR track position and the truth position of
+the associated target detection -- evaluation only, never fed back).
 
 Design notes (baseline simplifications, deliberate):
   * measurement noise is folded into an isotropic per-detection position
@@ -47,6 +49,16 @@ class KalmanTrackerConfig:
     max_misses: int = 3              # consecutive misses before deletion
 
 
+# Output-row schema; rows are built as tuples (not dicts) so a multi-million
+# state run stays within memory.
+ROW_COLUMNS = [
+    "track_id", "frame_id", "timestamp",
+    "x_m", "y_m", "z_m", "vx_mps", "vy_mps", "vz_mps",
+    "confirmed", "hits", "misses",
+    "detection_id", "assoc_is_target", "assoc_trajectory_id", "pos_error_m",
+]
+
+
 def spherical_to_cartesian(range_m, azimuth_rad, elevation_rad):
     """Radar spherical (range, az, el) -> local ENU Cartesian (x=E, y=N, z=U).
     Azimuth is compass-style (0 = north, pi/2 = east), matching stage 5/6."""
@@ -60,7 +72,7 @@ def spherical_to_cartesian(range_m, azimuth_rad, elevation_rad):
 class Track:
     """One constant-velocity Kalman track. State: [x y z vx vy vz]."""
 
-    __slots__ = ("track_id", "x", "P", "hits", "misses", "confirmed", "history")
+    __slots__ = ("track_id", "x", "P", "hits", "misses", "confirmed")
 
     def __init__(self, track_id: int, position: np.ndarray, sigma_pos: float,
                  cfg: KalmanTrackerConfig):
@@ -70,7 +82,6 @@ class Track:
         self.hits = 1
         self.misses = 0
         self.confirmed = False
-        self.history: List[dict] = []
 
     def predict(self, F: np.ndarray, Q: np.ndarray) -> None:
         self.x = F @ self.x
@@ -101,8 +112,9 @@ def _cv_matrices(dt: float, q_accel: float):
 def run_tracker(detections: pd.DataFrame, cfg: KalmanTrackerConfig) -> pd.DataFrame:
     """Track one detection stream. `detections` must have: frame_id,
     timestamp, detection_id, meas_range_m, meas_azimuth_rad,
-    meas_elevation_rad (+ is_target / trajectory_id, carried for evaluation
-    only). Returns one row per (frame, live track)."""
+    meas_elevation_rad (+ is_target / trajectory_id and, when available,
+    truth_range/azimuth/elevation, carried for evaluation only).
+    Returns one row per (frame, live track); see ROW_COLUMNS."""
     F, Q = _cv_matrices(cfg.frame_period_s, cfg.q_accel_mps2)
     sigma_angle = np.radians(cfg.sigma_angle_deg)
 
@@ -112,15 +124,27 @@ def run_tracker(detections: pd.DataFrame, cfg: KalmanTrackerConfig) -> pd.DataFr
     det = detections.assign(_x=x, _y=y, _z=z)
     det = det.assign(_sigma=np.sqrt(cfg.sigma_range_m**2
                                     + (det["meas_range_m"].to_numpy() * sigma_angle)**2))
+    # Truth positions (targets only; NaN for clutter) -- evaluation-only.
+    if "truth_range_m" in det.columns:
+        tx, ty, tz = spherical_to_cartesian(det["truth_range_m"],
+                                            det["truth_azimuth_rad"],
+                                            det["truth_elevation_rad"])
+    else:
+        tx = ty = tz = np.full(len(det), np.nan)
+    det = det.assign(_tx=tx, _ty=ty, _tz=tz)
 
     tracks: List[Track] = []
-    rows: List[dict] = []
+    rows: List[tuple] = []
     next_id = 0
 
     for frame_id, frame in det.groupby("frame_id", sort=True):
         timestamp = float(frame["timestamp"].iloc[0])
         positions = frame[["_x", "_y", "_z"]].to_numpy()
+        truth_pos = frame[["_tx", "_ty", "_tz"]].to_numpy()
         sigmas = frame["_sigma"].to_numpy()
+        det_ids = frame["detection_id"].to_numpy()
+        is_target = frame["is_target"].to_numpy()
+        traj_ids = frame["trajectory_id"].to_numpy()
 
         # --- predict all live tracks ------------------------------------
         for t in tracks:
@@ -142,6 +166,18 @@ def run_tracker(detections: pd.DataFrame, cfg: KalmanTrackerConfig) -> pd.DataFr
                 assigned_track[ti] = di
                 assigned_det.add(di)
 
+        def state_row(t: Track, di: Optional[int]) -> tuple:
+            if di is None:
+                return (t.track_id, frame_id, timestamp,
+                        t.x[0], t.x[1], t.x[2], t.x[3], t.x[4], t.x[5],
+                        int(t.confirmed), t.hits, t.misses, -1, -1, "", np.nan)
+            err = (float(np.linalg.norm(t.x[:3] - truth_pos[di]))
+                   if np.isfinite(truth_pos[di]).all() else np.nan)
+            return (t.track_id, frame_id, timestamp,
+                    t.x[0], t.x[1], t.x[2], t.x[3], t.x[4], t.x[5],
+                    int(t.confirmed), t.hits, t.misses,
+                    int(det_ids[di]), int(is_target[di]), traj_ids[di], err)
+
         # --- update / coast / spawn --------------------------------------
         survivors: List[Track] = []
         for ti, t in enumerate(tracks):
@@ -150,13 +186,12 @@ def run_tracker(detections: pd.DataFrame, cfg: KalmanTrackerConfig) -> pd.DataFr
                 t.update(positions[di], sigmas[di])
                 if t.hits >= cfg.confirm_hits:
                     t.confirmed = True
-                det_row = frame.iloc[di]
-                rows.append(_state_row(t, frame_id, timestamp, det_row))
+                rows.append(state_row(t, di))
                 survivors.append(t)
             else:
                 t.misses += 1
                 if t.misses <= cfg.max_misses:
-                    rows.append(_state_row(t, frame_id, timestamp, None))
+                    rows.append(state_row(t, None))
                     survivors.append(t)
                 # else: deleted silently
         tracks = survivors
@@ -165,25 +200,7 @@ def run_tracker(detections: pd.DataFrame, cfg: KalmanTrackerConfig) -> pd.DataFr
             if di not in assigned_det:
                 t = Track(next_id, positions[di], sigmas[di], cfg)
                 next_id += 1
-                det_row = frame.iloc[di]
-                rows.append(_state_row(t, frame_id, timestamp, det_row))
+                rows.append(state_row(t, di))
                 tracks.append(t)
 
-    return pd.DataFrame(rows)
-
-
-def _state_row(t: Track, frame_id, timestamp: float, det_row: Optional[pd.Series]) -> dict:
-    return {
-        "track_id": t.track_id,
-        "frame_id": frame_id,
-        "timestamp": timestamp,
-        "x_m": t.x[0], "y_m": t.x[1], "z_m": t.x[2],
-        "vx_mps": t.x[3], "vy_mps": t.x[4], "vz_mps": t.x[5],
-        "confirmed": int(t.confirmed),
-        "hits": t.hits,
-        "misses": t.misses,
-        "detection_id": int(det_row["detection_id"]) if det_row is not None else -1,
-        # evaluation-only labels; the tracker itself never reads these
-        "assoc_is_target": int(det_row["is_target"]) if det_row is not None else -1,
-        "assoc_trajectory_id": (det_row["trajectory_id"] if det_row is not None else ""),
-    }
+    return pd.DataFrame(rows, columns=ROW_COLUMNS)

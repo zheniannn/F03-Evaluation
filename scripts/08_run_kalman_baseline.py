@@ -30,7 +30,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DETECTION_PATTERN = re.compile(r"detections_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 
 DETECTION_USECOLS = ["frame_id", "timestamp", "detection_id", "is_target", "trajectory_id",
-                     "meas_range_m", "meas_azimuth_rad", "meas_elevation_rad"]
+                     "meas_range_m", "meas_azimuth_rad", "meas_elevation_rad",
+                     # truth position, carried for post-hoc state-error evaluation only
+                     "truth_range_m", "truth_azimuth_rad", "truth_elevation_rad"]
 
 
 def parse_args():
@@ -46,8 +48,8 @@ def parse_args():
                         default=os.path.join(REPO_ROOT, "data", "active", "tracks_kalman"))
     parser.add_argument("--report-dir", type=str,
                         default=os.path.join(REPO_ROOT, "reports", "stage08_kalman_baseline"))
-    parser.add_argument("--threshold-db", type=float, default=0.0,
-                        help="Which stage-6 threshold stream to track (default: 0).")
+    parser.add_argument("--threshold-db", type=float, nargs="+", default=[0.0],
+                        help="Which stage-6 threshold stream(s) to track (default: 0).")
     parser.add_argument("--date", type=str, default=None,
                         help="Restrict to one day (default: every day found).")
     parser.add_argument("--max-frames", type=int, default=None,
@@ -64,19 +66,19 @@ def parse_args():
     return parser.parse_args()
 
 
-def discover(detections_dir: str, threshold_db: float, date: str = None):
+def discover(detections_dir: str, thresholds_db, date: str = None):
     out = []
     for name in sorted(os.listdir(detections_dir)):
         m = DETECTION_PATTERN.search(name)
         if not m:
             continue
         thr = float(m.group(2).replace("m", "-").replace("p", "."))
-        if abs(thr - threshold_db) > 1e-9:
+        if not any(abs(thr - want) < 1e-9 for want in thresholds_db):
             continue
         if date is not None and m.group(1) != date:
             continue
         out.append((m.group(1), thr, os.path.join(detections_dir, name)))
-    return out
+    return sorted(out, key=lambda r: (r[0], r[1]))
 
 
 def run_one(date: str, threshold_db: float, path: str, tracks_dir: str,
@@ -116,6 +118,8 @@ def run_one(date: str, threshold_db: float, path: str, tracks_dir: str,
           else "fragmentation:         n/a")
     print(f"target det absorption: {m['target_det_absorption']:.3f}")
     print(f"clutter det absorption:{m['clutter_det_absorption']:.3f}")
+    print(f"position RMSE (true tracks): mean {m['mean_position_rmse_m']:.1f} m, "
+          f"median {m['median_position_rmse_m']:.1f} m")
     print(f"tracks written:        {out_path}")
     return m
 
@@ -134,13 +138,19 @@ def self_test() -> None:
     for k in range(frames):
         t = 1_000.0 + dt * k
         for traj_id, p0, v in targets:
-            p = p0 + v * (dt * k) + rng.normal(0, 30.0, 3)
-            r = np.linalg.norm(p)
-            az = np.arctan2(p[0], p[1]) % (2 * np.pi)
-            el = np.arcsin(np.clip(p[2] / r, -1, 1))
+            p_true = p0 + v * (dt * k)
+            p = p_true + rng.normal(0, 30.0, 3)
+
+            def to_sph(q):
+                r = np.linalg.norm(q)
+                return r, np.arctan2(q[0], q[1]) % (2 * np.pi), np.arcsin(np.clip(q[2] / r, -1, 1))
+
+            r, az, el = to_sph(p)
+            tr, taz, tel = to_sph(p_true)
             rows.append(dict(frame_id=k, timestamp=t, detection_id=det_id, is_target=1,
                              trajectory_id=traj_id, meas_range_m=r, meas_azimuth_rad=az,
-                             meas_elevation_rad=el))
+                             meas_elevation_rad=el, truth_range_m=tr, truth_azimuth_rad=taz,
+                             truth_elevation_rad=tel))
             det_id += 1
         for _ in range(3):   # spatially independent clutter
             r = rng.uniform(5_000, 60_000)
@@ -148,7 +158,8 @@ def self_test() -> None:
             el = rng.uniform(0.0, 0.3)
             rows.append(dict(frame_id=k, timestamp=t, detection_id=det_id, is_target=0,
                              trajectory_id=np.nan, meas_range_m=r, meas_azimuth_rad=az,
-                             meas_elevation_rad=el))
+                             meas_elevation_rad=el, truth_range_m=np.nan,
+                             truth_azimuth_rad=np.nan, truth_elevation_rad=np.nan))
             det_id += 1
     det = pd.DataFrame(rows)
 
@@ -169,6 +180,8 @@ def self_test() -> None:
     per_track = result["per_track"]
     true_purity = per_track[per_track["is_true_track"]]["purity"]
     assert (true_purity >= 0.9).all(), f"true-track purity too low: {true_purity.tolist()}"
+    assert np.isfinite(m["mean_position_rmse_m"]) and m["mean_position_rmse_m"] < 150.0, \
+        f"true-track position RMSE too large: {m['mean_position_rmse_m']}"
 
     with tempfile.TemporaryDirectory() as tmp:
         m.update({"date": "2022-01-01", "threshold_db": 0.0})
@@ -199,7 +212,8 @@ def main() -> None:
 
     found = discover(args.detections_dir, args.threshold_db, args.date)
     if not found:
-        print(f"No detection files for threshold {args.threshold_db:g} dB"
+        thr_str = ", ".join(f"{t:g}" for t in args.threshold_db)
+        print(f"No detection files for threshold(s) {thr_str} dB"
               f"{f' and date {args.date}' if args.date else ''} in {args.detections_dir}")
         return
 
@@ -213,10 +227,20 @@ def main() -> None:
     if summary_rows:
         os.makedirs(args.report_dir, exist_ok=True)
         summary_df = pd.DataFrame(summary_rows)
-        summary_path = os.path.join(args.report_dir, "kalman_baseline_summary.csv")
-        summary_df.to_csv(summary_path, index=False)
-        report_path = write_report(args.report_dir, summary_rows, cfg, eval_cfg)
-        print(f"\nSummary written to: {os.path.abspath(summary_path)}")
+        # kalman_metrics_by_day.csv is the canonical per-(date, threshold)
+        # metrics table; it MERGES with previous runs so incremental sweeps
+        # accumulate instead of clobbering each other.
+        metrics_path = os.path.join(args.report_dir, "kalman_metrics_by_day.csv")
+        if os.path.exists(metrics_path):
+            old = pd.read_csv(metrics_path)
+            keys = summary_df[["date", "threshold_db"]].apply(tuple, axis=1)
+            old = old[~old[["date", "threshold_db"]].apply(tuple, axis=1).isin(set(keys))]
+            summary_df = pd.concat([old, summary_df], ignore_index=True)
+        summary_df = summary_df.sort_values(["date", "threshold_db"]).reset_index(drop=True)
+        summary_df.to_csv(metrics_path, index=False)
+        summary_df.to_csv(os.path.join(args.report_dir, "kalman_baseline_summary.csv"), index=False)
+        report_path = write_report(args.report_dir, summary_df.to_dict("records"), cfg, eval_cfg)
+        print(f"\nMetrics written to: {os.path.abspath(metrics_path)}")
         print(f"Report written to:  {os.path.abspath(report_path)}")
 
     print("\n08_run_kalman_baseline completed successfully.")

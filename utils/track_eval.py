@@ -41,6 +41,7 @@ def evaluate_tracks(tracks: pd.DataFrame, detections: pd.DataFrame,
     cfg = cfg or TrackEvalConfig()
 
     assoc = tracks[tracks["detection_id"] >= 0]
+    confirmed_by_track = tracks.groupby("track_id")["confirmed"].max()
     per_track_rows = []
     for track_id, g in assoc.groupby("track_id"):
         n = len(g)
@@ -51,14 +52,17 @@ def evaluate_tracks(tracks: pd.DataFrame, detections: pd.DataFrame,
             dominant_n = int((g["assoc_trajectory_id"] == dominant_traj).sum())
         else:
             dominant_traj, dominant_n = "", 0
-        confirmed = bool(tracks.loc[tracks["track_id"] == track_id, "confirmed"].max())
+        confirmed = bool(confirmed_by_track.loc[track_id])
         purity = n_target / n
         dominant_fraction = dominant_n / n
+        errs = g["pos_error_m"].to_numpy(dtype=float) if "pos_error_m" in g.columns else np.array([])
+        errs = errs[np.isfinite(errs)]
         per_track_rows.append({
             "track_id": track_id, "confirmed": confirmed,
             "n_associated": n, "n_target_dets": n_target,
             "purity": purity, "dominant_trajectory_id": dominant_traj,
             "dominant_fraction": dominant_fraction,
+            "position_rmse_m": float(np.sqrt((errs**2).mean())) if errs.size else np.nan,
             "is_true_track": bool(confirmed and purity >= cfg.purity_threshold
                                   and dominant_fraction >= cfg.dominant_threshold),
         })
@@ -97,7 +101,19 @@ def evaluate_tracks(tracks: pd.DataFrame, detections: pd.DataFrame,
                                   if n_target_dets else np.nan),
         "clutter_det_absorption": (int((assoc_conf["assoc_is_target"] == 0).sum()) / n_clutter_dets
                                    if n_clutter_dets else np.nan),
+        # Purity / state-error aggregates over TRUE tracks (posterior track
+        # position vs the truth position of each associated target detection).
+        "median_track_purity": float(true_tracks["purity"].median()) if len(true_tracks) else np.nan,
+        "mean_position_rmse_m": (float(true_tracks["position_rmse_m"].mean())
+                                 if len(true_tracks) else np.nan),
+        "median_position_rmse_m": (float(true_tracks["position_rmse_m"].median())
+                                   if len(true_tracks) else np.nan),
     }
+    # Spec-named aliases used by the stage07-vs-stage08 comparison.
+    metrics["track_detection_rate"] = metrics["trajectory_coverage"]
+    metrics["target_assignment_rate"] = metrics["target_det_absorption"]
+    metrics["clutter_assignment_rate"] = metrics["clutter_det_absorption"]
+    metrics["mean_track_purity"] = metrics["mean_true_track_purity"]
     return {"metrics": metrics, "per_track": per_track}
 
 
