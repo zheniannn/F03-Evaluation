@@ -1,7 +1,7 @@
 # Relocated Wide-Area Weak-Target Experiment Audit
 
-- Truth: `data/active/radar_truth_relocated`
-- Detections: `data/active/sim_detections_relocated`
+- Truth: `/home/tzhen/projects/PLSWORK/F03-Evaluation/data/active/radar_truth_relocated`
+- Detections: `/home/tzhen/projects/PLSWORK/F03-Evaluation/data/active/sim_detections_relocated`
 - Coverage range audited against: **100 km**
 
 ## Interpretation

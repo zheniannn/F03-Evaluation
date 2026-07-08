@@ -36,6 +36,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from utils.common import md_table, threshold_to_token, token_to_threshold
+
 TRACKS_PATTERN = re.compile(r"^tracks_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 POINTS_PATTERN = re.compile(r"^track_points_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 
@@ -126,7 +128,7 @@ def discover_stage08_runs(tracks_dir: str) -> List[Tuple[str, float, str]]:
         for pattern in (POINTS_PATTERN, TRACKS_PATTERN):
             m = pattern.match(name)
             if m:
-                thr = float(m.group(2).replace("m", "-").replace("p", "."))
+                thr = token_to_threshold(m.group(2))
                 key = (m.group(1), thr)
                 # points schema wins if both exist
                 if key not in runs or pattern is POINTS_PATTERN:
@@ -338,10 +340,10 @@ def score_run(date: str, threshold_db: float, points_path: str,
         s = score_features(f, cfg, snr_available, association_available)
         f.update(s)
         f["keep_physics"] = bool(f["physics_score"] >= cfg.score_threshold)
+        tf, pu = f["target_fraction"], f["purity"]
         f["is_true_track"] = bool(
-            (f["target_fraction"] is not np.nan and np.isfinite(f["target_fraction"])
-             and f["target_fraction"] >= TRUE_TRACK_TARGET_FRACTION)
-            and np.isfinite(f["purity"]) and f["purity"] >= TRUE_TRACK_PURITY
+            np.isfinite(tf) and tf >= TRUE_TRACK_TARGET_FRACTION
+            and np.isfinite(pu) and pu >= TRUE_TRACK_PURITY
             and f["majority_trajectory_id"] is not None)
         f.update({"date": date, "threshold_db": threshold_db, "track_id": track_id})
         rows.append(f)
@@ -356,7 +358,7 @@ def score_run(date: str, threshold_db: float, points_path: str,
 # Aggregates
 # =============================================================================
 
-def _aggregate(scores: pd.DataFrame, by: List[str], score_threshold: float) -> pd.DataFrame:
+def aggregate_scores(scores: pd.DataFrame, by: List[str], score_threshold: float) -> pd.DataFrame:
     rows = []
     for key, g in scores.groupby(by):
         key = key if isinstance(key, tuple) else (key,)
@@ -487,24 +489,6 @@ def make_plots(scores: pd.DataFrame, by_thr: pd.DataFrame, sweep: pd.DataFrame,
 # Report
 # =============================================================================
 
-def _md_table(df: pd.DataFrame) -> List[str]:
-    cols = list(df.columns)
-    lines = ["| " + " | ".join(str(c) for c in cols) + " |",
-             "|" + "|".join(["---:"] * len(cols)) + "|"]
-    for _, r in df.iterrows():
-        cells = []
-        for c in cols:
-            v = r[c]
-            if isinstance(v, float) and np.isfinite(v) and not float(v).is_integer():
-                cells.append(f"{v:.4f}")
-            elif isinstance(v, float) and np.isfinite(v):
-                cells.append(f"{int(v):,}")
-            else:
-                cells.append(f"{v:,}" if isinstance(v, (int, np.integer)) else str(v))
-        lines.append("| " + " | ".join(cells) + " |")
-    return lines
-
-
 def write_report(report_dir: str, scores: pd.DataFrame, by_thr: pd.DataFrame,
                  comparison: pd.DataFrame, sweep: pd.DataFrame,
                  cfg: PhysicsScoreConfig, channels_note: str) -> str:
@@ -563,7 +547,7 @@ def write_report(report_dir: str, scores: pd.DataFrame, by_thr: pd.DataFrame,
         "## Overall results",
         "",
     ]
-    lines += _md_table(comparison)
+    lines += md_table(comparison)
     lines += [
         "",
         "coverage_proxy columns are NaN: this stage evaluates **track-level",
@@ -580,11 +564,11 @@ def write_report(report_dir: str, scores: pd.DataFrame, by_thr: pd.DataFrame,
     pivot = sweep.pivot_table(index="score_threshold", columns="threshold_db",
                               values="false_track_reduction").round(3).reset_index()
     pivot.columns = [str(c) for c in pivot.columns]
-    lines += ["False-track reduction:", ""] + _md_table(pivot)
+    lines += ["False-track reduction:", ""] + md_table(pivot)
     pivot2 = sweep.pivot_table(index="score_threshold", columns="threshold_db",
                                values="true_track_retention").round(3).reset_index()
     pivot2.columns = [str(c) for c in pivot2.columns]
-    lines += ["", "True-track retention:", ""] + _md_table(pivot2)
+    lines += ["", "True-track retention:", ""] + md_table(pivot2)
     lines += [
         "",
         "## Score separability",

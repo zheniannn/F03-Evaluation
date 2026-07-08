@@ -25,7 +25,7 @@ from utils.threshold_eval import (
     self_test,
 )
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from utils.common import REPO_ROOT
 
 
 def parse_args():

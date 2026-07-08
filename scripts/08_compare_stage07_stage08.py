@@ -21,7 +21,10 @@ import tempfile
 
 import pandas as pd
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Make utils/ importable regardless of the caller's working directory.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.common import REPO_ROOT
 
 # stage07 source column -> comparison column
 STAGE07_COLUMNS = {

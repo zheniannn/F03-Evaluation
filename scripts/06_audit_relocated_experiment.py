@@ -32,7 +32,7 @@ import pandas as pd
 # Make utils/ importable regardless of the caller's working directory.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from utils.common import REPO_ROOT
 
 TRUTH_PATTERN = re.compile(r"radar_truth_(\d{4}-\d{2}-\d{2})\.csv$")
 DETECTION_PATTERN = re.compile(r"detections_(\d{4}-\d{2}-\d{2})_thr_.+dB\.csv$")

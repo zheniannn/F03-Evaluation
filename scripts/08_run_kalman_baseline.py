@@ -13,7 +13,6 @@ Usage:
 
 import argparse
 import os
-import re
 import sys
 import tempfile
 
@@ -26,8 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.kalman_tracker import KalmanTrackerConfig, run_tracker, spherical_to_cartesian
 from utils.track_eval import TrackEvalConfig, evaluate_tracks, write_report
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DETECTION_PATTERN = re.compile(r"detections_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
+from utils.common import DETECTION_PATTERN, REPO_ROOT, threshold_to_token, token_to_threshold
 
 DETECTION_USECOLS = ["frame_id", "timestamp", "detection_id", "is_target", "trajectory_id",
                      "meas_range_m", "meas_azimuth_rad", "meas_elevation_rad",
@@ -72,7 +70,7 @@ def discover(detections_dir: str, thresholds_db, date: str = None):
         m = DETECTION_PATTERN.search(name)
         if not m:
             continue
-        thr = float(m.group(2).replace("m", "-").replace("p", "."))
+        thr = token_to_threshold(m.group(2))
         if not any(abs(thr - want) < 1e-9 for want in thresholds_db):
             continue
         if date is not None and m.group(1) != date:
@@ -84,7 +82,7 @@ def discover(detections_dir: str, thresholds_db, date: str = None):
 def run_one(date: str, threshold_db: float, path: str, tracks_dir: str,
             cfg: KalmanTrackerConfig, eval_cfg: TrackEvalConfig,
             max_frames, overwrite: bool):
-    token = f"{threshold_db:.1f}".replace("-", "m").replace(".", "p")
+    token = threshold_to_token(threshold_db)
     out_path = os.path.join(tracks_dir, f"tracks_{date}_thr_{token}dB.csv")
     if os.path.exists(out_path) and not overwrite:
         print(f"[{date} thr={threshold_db:g}dB] tracks exist, skipping "

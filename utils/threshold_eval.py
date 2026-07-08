@@ -25,8 +25,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from utils.common import DETECTION_PATTERN, md_table, parse_detection_filename
+
 TRUTH_PATTERN = re.compile(r"radar_truth_(\d{4}-\d{2}-\d{2})\.csv$")
-DETECTION_PATTERN = re.compile(r"detections_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 SUMMARY_NAME = "sim_detection_summary.csv"
 
 QUANTILE_SAMPLE_CAP = 200_000
@@ -82,14 +83,6 @@ def discover_truth_files(truth_dir: str) -> List[Tuple[str, str]]:
         if m:
             out.append((m.group(1), os.path.join(truth_dir, name)))
     return out
-
-
-def parse_detection_filename(path: str) -> Optional[Tuple[str, float]]:
-    """detections_2022-06-06_thr_m5p0dB.csv -> ('2022-06-06', -5.0)."""
-    m = DETECTION_PATTERN.search(os.path.basename(path))
-    if not m:
-        return None
-    return m.group(1), float(m.group(2).replace("m", "-").replace("p", "."))
 
 
 def discover_detection_files(detections_dir: str) -> List[Tuple[str, float, str]]:
@@ -429,26 +422,6 @@ def make_plots(tables: Dict[str, pd.DataFrame], plots_dir: str) -> None:
 # Report
 # =============================================================================
 
-def _md_table(df: pd.DataFrame, float_fmt: str = "{:.4f}") -> List[str]:
-    cols = list(df.columns)
-    lines = ["| " + " | ".join(cols) + " |",
-             "|" + "|".join(["---:" for _ in cols]) + "|"]
-    for _, row in df.iterrows():
-        cells = []
-        for c in cols:
-            v = row[c]
-            if isinstance(v, float) and not float(v).is_integer():
-                cells.append(float_fmt.format(v))
-            elif isinstance(v, float):
-                cells.append(f"{int(v):,}")
-            elif isinstance(v, (int, np.integer)):
-                cells.append(f"{int(v):,}")
-            else:
-                cells.append(str(v))
-        lines.append("| " + " | ".join(cells) + " |")
-    return lines
-
-
 def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: ThresholdEvalConfig,
                  relocated_seen: bool, summary: Optional[pd.DataFrame]) -> str:
     overall = tables["overall"].sort_values("threshold_db")
@@ -485,7 +458,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
         "## Overall operating curve",
         "",
     ]
-    lines += _md_table(overall[["threshold_db", "truth_rows", "target_detections",
+    lines += md_table(overall[["threshold_db", "truth_rows", "target_detections",
                                 "clutter_detections", "missed_targets", "empirical_pd",
                                 "false_alarm_per_frame", "target_fraction"]])
     lines += [
@@ -498,7 +471,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
     pd_pivot = by_day.pivot_table(index="date", columns="threshold_db",
                                   values="empirical_pd").round(4).reset_index()
     pd_pivot.columns = [str(c) for c in pd_pivot.columns]
-    lines += _md_table(pd_pivot)
+    lines += md_table(pd_pivot)
     lines += [
         "",
         "## Range-bin detection probability",
@@ -511,7 +484,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
                                 values="empirical_pd_bin").round(4)
     bin_pivot = bin_pivot.reindex(obb.sort_values("bin_lo_m")["range_bin"].unique()).reset_index()
     bin_pivot.columns = [str(c) for c in bin_pivot.columns]
-    lines += _md_table(bin_pivot)
+    lines += md_table(bin_pivot)
 
     clu = tables["clutter_by_bin"].groupby(["threshold_db", "range_bin", "bin_lo_m"]).agg(
         clutter_detections_bin=("clutter_detections_bin", "sum")).reset_index()
@@ -528,7 +501,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
         "wider bins collect proportionally more:",
         "",
     ]
-    lines += _md_table(clu_pivot)
+    lines += md_table(clu_pivot)
     lines += [
         "",
         "## SNR distribution of written detections",
@@ -540,7 +513,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
         "group (seed 123); counts are exact.",
         "",
     ]
-    lines += _md_table(tables["snr_summary"], float_fmt="{:.2f}")
+    lines += md_table(tables["snr_summary"], float_fmt="{:.2f}")
     lines += [
         "",
         "## Measurement noise sanity check",
@@ -550,7 +523,7 @@ def write_report(output_dir: str, tables: Dict[str, pd.DataFrame], cfg: Threshol
         "(sigma_range 75 m, sigma_az/el 0.15 deg = 2.62e-3 rad, sigma_rv 2 m/s):",
         "",
     ]
-    lines += _md_table(tables["error_summary"], float_fmt="{:.4g}")
+    lines += md_table(tables["error_summary"], float_fmt="{:.4g}")
     lines += [
         "",
         "## Interpretation",

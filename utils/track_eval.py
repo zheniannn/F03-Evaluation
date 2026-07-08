@@ -25,6 +25,8 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 
+from utils.common import md_table
+
 
 @dataclass
 class TrackEvalConfig:

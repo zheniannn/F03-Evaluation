@@ -1,5 +1,7 @@
 # F03-Evaluation
 
+> Part of the PLSWORK light-GA radar pipeline: [F01-Preprocessing](https://github.com/zheniannn/F01-Preprocessing) (stages 1-4) → [F02-Radar](https://github.com/zheniannn/F02-Radar) (stages 5-6) → [F03-Evaluation](https://github.com/zheniannn/F03-Evaluation) (stages 7-9).
+
 Evaluation stages of the light-GA radar pipeline. **F03-Evaluation consumes
 outputs from F02-Radar** (which ends at stage 6 synthetic detections):
 
@@ -19,9 +21,11 @@ F03-Evaluation/
 │   ├── 07_evaluate_threshold_only.py      # stage 7: threshold-only baseline
 │   └── 08_run_kalman_baseline.py          # stage 8: CV-Kalman detect-then-track
 ├── utils/
+│   ├── common.py                          # shared repo-root/parsing/markdown helpers
 │   ├── threshold_eval.py                  # stage 7 logic
 │   ├── kalman_tracker.py                  # stage 8 tracker (CV-KF + greedy gated NN)
-│   └── track_eval.py                      # stage 8 evaluation + report
+│   ├── track_eval.py                      # stage 8 evaluation + report
+│   └── track_physics_score.py             # stage 9 physics scoring
 ├── data/active/
 │   ├── radar_truth_relocated/             # INPUT from F02 (git-ignored)
 │   ├── sim_detections_relocated/          # INPUT from F02 (git-ignored)

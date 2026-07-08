@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.track_physics_score import (
     SCORE_COLUMNS,
     PhysicsScoreConfig,
-    _aggregate,
+    aggregate_scores,
     discover_stage08_runs,
     make_plots,
     run_validation_gate,
@@ -36,7 +36,7 @@ from utils.track_physics_score import (
     write_report,
 )
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from utils.common import REPO_ROOT, threshold_to_token
 
 
 def parse_args():
@@ -100,7 +100,7 @@ def run_all(cfg: PhysicsScoreConfig) -> dict:
         scores = score_run(date, thr, path, cfg)
         channels["snr"] &= scores.attrs.get("snr_available", False)
         channels["association"] &= scores.attrs.get("association_available", False)
-        token = f"{thr:.1f}".replace("-", "m").replace(".", "p")
+        token = threshold_to_token(thr)
         scores.to_csv(os.path.join(cfg.scored_tracks_dir,
                                    f"scored_tracks_{date}_thr_{token}dB.csv"), index=False)
         n_kept = int(scores["keep_physics"].sum())
@@ -112,8 +112,8 @@ def run_all(cfg: PhysicsScoreConfig) -> dict:
     scores_out = scores[[c for c in SCORE_COLUMNS if c in scores.columns]]
     scores_out.to_csv(key_output, index=False, float_format="%.5g")
 
-    by_thr = _aggregate(scores, ["threshold_db"], cfg.score_threshold)
-    by_day = _aggregate(scores, ["date", "threshold_db"], cfg.score_threshold)
+    by_thr = aggregate_scores(scores, ["threshold_db"], cfg.score_threshold)
+    by_day = aggregate_scores(scores, ["date", "threshold_db"], cfg.score_threshold)
     sweep = sweep_table(scores, cfg.sweep_thresholds)
 
     comparison = by_thr[[
