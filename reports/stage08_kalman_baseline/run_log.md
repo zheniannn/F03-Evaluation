@@ -83,3 +83,33 @@ Observations:
   a low threshold is clutter-born tracks, not lost trajectories.
 - Fragmentation rises with threshold (1.40 → 1.88): sparser detections
   break trajectories into more track segments.
+
+## Deferred high-threshold run: 2022-06-06, thresholds 9 and 12 dB
+
+Command:
+
+```bash
+python scripts/08_run_kalman_baseline.py \
+  --detections-dir data/active/sim_detections_relocated \
+  --truth-dir data/active/radar_truth_relocated \
+  --tracks-dir data/active/tracks_kalman \
+  --report-dir reports/stage08_kalman_baseline \
+  --threshold-db 9 12 --date 2022-06-06 --overwrite
+```
+
+Completed successfully. Runtime **2m29s**. Track CSVs (git-ignored):
+228 MB (9 dB), 180 MB (12 dB). The accumulated
+`kalman_metrics_by_day.csv` now covers all six thresholds.
+
+| threshold (dB) | detections in | confirmed | true | false | coverage | fragmentation | target abs. | clutter abs. | RMSE mean/median (m) |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 9 | 908,053 | 27,767 | 27,601 | 166 | 0.918 (14,689/16,004) | 1.88 | 0.937 | 0.014 | 177.3 / 165.6 |
+| 12 | 705,685 | 22,890 | 22,766 | 124 | 0.894 (12,396/13,873) | 1.84 | 0.922 | 0.012 | 158.5 / 146.8 |
+
+Observation: high thresholds do keep suppressing false tracks (307 → 166 →
+124), but recovery now genuinely degrades — coverage falls to 0.918 (9 dB)
+and 0.894 (12 dB), and the trackable-trajectory denominator itself shrinks
+(17,726 → 16,004 → 13,873) as weak far trajectories stop being detected at
+all. Fragmentation stays at its plateau (~1.85–1.88). RMSE improves with
+threshold because only strong, well-measured (mostly nearer) targets
+survive — a selection effect, not better tracking.

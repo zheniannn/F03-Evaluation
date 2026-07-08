@@ -511,9 +511,19 @@ def write_report(report_dir: str, scores: pd.DataFrame, by_thr: pd.DataFrame,
     true_med = scores.loc[scores["is_true_track"], "physics_score"].median()
     false_med = scores.loc[~scores["is_true_track"], "physics_score"].median()
     separable = np.isfinite(true_med) and np.isfinite(false_med) and true_med > false_med
+    dates = sorted(scores["date"].unique())
+    date_scope = (f"These are one-day results for {dates[0]}." if len(dates) == 1
+                  else f"These results cover {len(dates)} days: {', '.join(dates)}.")
 
     lines = [
         "# Stage 09 Physics-Guided Track Scoring",
+        "",
+        "## Status",
+        "",
+        f"- {date_scope}",
+        "- **Stage 10 is intentionally deferred.**",
+        "- Stage 09 remains **hand-designed physics scoring**, not empirical",
+        "  ADS-B prior learning and not VAE.",
         "",
         "## Experiment definition",
         "",

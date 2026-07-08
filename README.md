@@ -199,6 +199,10 @@ python scripts/09_score_tracks_physics.py \
 `--self-test` runs without real data; `--sweep-thresholds` controls the
 retention-vs-reduction sweep; `--w-*` flags adjust penalty weights.
 
+**Current status:** Stage 09 has been run on the full one-day threshold
+sweep for 2022-06-06 (−5, 0, 3, 6, 9, 12 dB). **Stage 10 empirical ADS-B
+prior learning is intentionally deferred.**
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the
