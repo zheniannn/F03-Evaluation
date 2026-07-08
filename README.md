@@ -163,6 +163,42 @@ python scripts/08_compare_stage07_stage08.py \
 
 4. **Only then** expand to all days and thresholds.
 
+## Stage 09 — Physics-guided track scoring
+
+Scores every stage-8 confirmed track with a **transparent, rule-based
+physics plausibility score** in [0, 1] (soft penalties on p95 speed,
+acceleration, turn rate, vertical speed, hit-rate continuity, median SNR,
+and association consistency, weighted and inverted), then filters at a
+score threshold and evaluates false-track reduction vs true-track
+retention. **This is post-track scoring — the Kalman tracker is not
+modified**, and **truth labels are evaluation-only**: the score never sees
+`is_target`, `trajectory_id`, purity, or truth positions. Nothing is
+trained (no ML, no VAE). **Stage 10 will replace the hand-tuned penalty
+knees with empirical ADS-B motion priors** learned from stage-4 data or
+true tracks.
+
+- **Inputs:** stage-8 track files in `data/active/tracks_kalman/`
+  (both the `tracks_*` baseline schema and a richer
+  `track_points_*`/`track_summary_*` schema are accepted; for the baseline
+  schema, per-detection `snr_db` is recovered from the stage-6 detections
+  and unavailable channels are excluded from the score weighting).
+- **Outputs:** compact tables, plots, and `physics_scoring_report.md` in
+  `reports/stage09_physics_scoring/`; large per-track scored CSVs in
+  `data/active/tracks_scored_physics/` (git-ignored).
+
+```bash
+python scripts/09_score_tracks_physics.py \
+  --tracks-dir data/active/tracks_kalman \
+  --report-dir reports/stage09_physics_scoring \
+  --threshold-db -5 0 3 6 \
+  --date 2022-06-06 \
+  --score-threshold 0.5 \
+  --overwrite
+```
+
+`--self-test` runs without real data; `--sweep-thresholds` controls the
+retention-vs-reduction sweep; `--w-*` flags adjust penalty weights.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

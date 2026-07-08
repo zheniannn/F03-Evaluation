@@ -11,3 +11,5 @@ data/active/tracks_kalman/*.csv
 !data/active/radar_truth_relocated/.gitkeep
 !data/active/sim_detections_relocated/.gitkeep
 !data/active/tracks_kalman/.gitkeep
+data/active/tracks_scored_physics/*.csv
+!data/active/tracks_scored_physics/.gitkeep
