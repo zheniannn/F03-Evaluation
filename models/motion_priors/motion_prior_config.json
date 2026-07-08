@@ -1,0 +1,21 @@
+{
+ "created_by": "Stage 10",
+ "input_dir": "data/active/trajectories_10s",
+ "train_dates": [
+  "2022-06-06",
+  "2022-06-13",
+  "2022-06-20",
+  "2022-06-27"
+ ],
+ "holdout_dates": [],
+ "filters": {
+  "min_speed_mps": 5.0,
+  "max_speed_mps": 160.0,
+  "max_abs_vertical_speed_mps": 40.0,
+  "max_abs_turn_rate_deg_s": 30.0,
+  "max_accel_mps2": 15.0
+ },
+ "hist_bins": 200,
+ "sample_per_feature": 1000000,
+ "notes": "Counts and histograms are exact; quantiles come from a seeded streaming reservoir capped at sample_per_feature."
+}

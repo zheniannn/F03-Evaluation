@@ -207,6 +207,59 @@ retention-vs-reduction sweep; `--w-*` flags adjust penalty weights.
 sweep for 2022-06-06 (−5, 0, 3, 6, 9, 12 dB). **Stage 10 empirical ADS-B
 prior learning is intentionally deferred.**
 
+## Stage 10 — Empirical ADS-B motion priors
+
+Learns **data-derived motion plausibility distributions** from the F01
+stage-4 fixed-wing GA trajectories: transparent histogram priors (density +
+quantiles, JSON) for speed, |acceleration|, vector acceleration,
+|turn rate|, and |vertical speed|, plus a simple joint summary
+(correlations, log1p covariance, median/MAD). **Stage 10 only learns
+priors** — it does not score tracks; **stage 11 will apply these priors to
+stage-8 tracks** and compare against stage-9's hand-designed penalties. No
+neural networks, no VAE.
+
+- **Input contract (from F01 stage 4):**
+  `states_YYYY-MM-DD_conventionalGA_trajectories_10s.csv` in
+  `data/active/trajectories_10s/` with at least `trajectory_id`,
+  `timestamp`, an altitude column (`alt_smooth` preferred, `alt_interp`
+  fallback), and `speed_mps`; `accel_mps2` / `accel_vector_mps2` /
+  `turn_rate_deg_s` are used when present. Copy or symlink them in:
+
+```bash
+cp ../F01-Preprocessing/data/active/trajectories_10s/states_*_trajectories_10s.csv \
+   data/active/trajectories_10s/
+```
+
+- **Outputs:** prior JSONs in `models/motion_priors/` (committed) and
+  compact tables/plots/report in `reports/stage10_adsb_motion_priors/`
+  (committed). Counts and histograms are exact; quantiles come from a
+  seeded streaming reservoir (disclosed in the manifest). Fitting filters
+  (speed 5–160 m/s, |accel| ≤ 15 m/s², |turn| ≤ 30 °/s, |vz| ≤ 40 m/s)
+  drop noise/outliers from the fit and are disclosed in every prior file.
+
+```bash
+python scripts/10_learn_adsb_motion_priors.py \
+  --input-dir data/active/trajectories_10s \
+  --models-dir models/motion_priors \
+  --report-dir reports/stage10_adsb_motion_priors \
+  --overwrite
+```
+
+Train/holdout variant (holdout day reported but excluded from the fit;
+note the separate models dir so the canonical all-days priors are not
+overwritten):
+
+```bash
+python scripts/10_learn_adsb_motion_priors.py \
+  --input-dir data/active/trajectories_10s \
+  --models-dir models/motion_priors_holdout \
+  --report-dir reports/stage10_adsb_motion_priors_holdout \
+  --holdout-date 2022-06-27 \
+  --overwrite
+```
+
+`--self-test` runs without real data.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

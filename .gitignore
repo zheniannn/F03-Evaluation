@@ -13,3 +13,5 @@ data/active/tracks_kalman/*.csv
 !data/active/tracks_kalman/.gitkeep
 data/active/tracks_scored_physics/*.csv
 !data/active/tracks_scored_physics/.gitkeep
+data/active/trajectories_10s/*.csv
+!data/active/trajectories_10s/.gitkeep
