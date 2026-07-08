@@ -17,11 +17,6 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DETECTION_PATTERN = re.compile(r"detections_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 
 
-def repo_path(*parts: str) -> str:
-    """Absolute path under the F03-Evaluation repo root."""
-    return os.path.join(REPO_ROOT, *parts)
-
-
 def threshold_to_token(threshold_db: float) -> str:
     """Filename-safe threshold token, matching stage 6: 6.0 -> '6p0', -5.0 -> 'm5p0'."""
     return f"{threshold_db:.1f}".replace("-", "m").replace(".", "p")

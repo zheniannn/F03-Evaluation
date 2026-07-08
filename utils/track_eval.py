@@ -149,18 +149,7 @@ def write_report(report_dir: str, summary_rows: list, tracker_cfg, eval_cfg: Tra
         cols = ["date", "threshold_db", "frames", "detections_in", "tracks_confirmed",
                 "true_tracks", "false_tracks", "trajectory_coverage", "fragmentation",
                 "mean_true_track_purity", "target_det_absorption", "clutter_det_absorption"]
-        cols = [c for c in cols if c in df.columns]
-        header = "| " + " | ".join(cols) + " |"
-        sep = "|" + "|".join(["---:"] * len(cols)) + "|"
-        lines += [header, sep]
-        for _, r in df.iterrows():
-            cells = []
-            for c in cols:
-                v = r[c]
-                cells.append(f"{v:.4f}" if isinstance(v, float) and not float(v).is_integer()
-                             else (f"{int(v):,}" if isinstance(v, (int, float, np.integer)) and not isinstance(v, bool)
-                                   else str(v)))
-            lines.append("| " + " | ".join(cells) + " |")
+        lines += md_table(df[[c for c in cols if c in df.columns]])
     lines += [
         "",
         "## Interpretation",

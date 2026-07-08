@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils.common import DETECTION_PATTERN, md_table, parse_detection_filename
+from utils.common import md_table, parse_detection_filename
 
 TRUTH_PATTERN = re.compile(r"radar_truth_(\d{4}-\d{2}-\d{2})\.csv$")
 SUMMARY_NAME = "sim_detection_summary.csv"

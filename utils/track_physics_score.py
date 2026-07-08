@@ -26,7 +26,6 @@ not numerically match the stage-8 report (which used 0.5 thresholds).
 
 import os
 import re
-import tempfile
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -36,7 +35,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils.common import md_table, threshold_to_token, token_to_threshold
+from utils.common import md_table, token_to_threshold
 
 TRACKS_PATTERN = re.compile(r"^tracks_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
 POINTS_PATTERN = re.compile(r"^track_points_(\d{4}-\d{2}-\d{2})_thr_(.+)dB\.csv$")
