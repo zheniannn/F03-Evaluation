@@ -260,6 +260,38 @@ python scripts/10_learn_adsb_motion_priors.py \
 
 `--self-test` runs without real data.
 
+## Stage 11 — Empirical ADS-B-prior track scoring
+
+Applies the **stage-10 empirical ADS-B priors** to the stage-8 confirmed
+Kalman tracks: per-feature quantile-exceedance penalties (from the prior
+JSON quantiles — nothing hand-coded), histogram log-density diagnostics,
+and a joint-prior Mahalanobis score, combined into a weighted
+`adsb_prior_score` in [0, 1]. Results are **compared against stage-9
+hand-designed physics scoring** on the same tracks with the same strict
+true-track definition. Truth labels are evaluation-only; **still no
+VAE/diffusion/ML model zoo** — that is stage 12.
+
+- **Inputs:** stage-8 tracks (`data/active/tracks_kalman/`, both schemas),
+  stage-10 priors (`models/motion_priors/`), and — when present — the
+  stage-9 comparison CSV for the three-way table.
+- **Outputs:** compact tables, plots, and `adsb_prior_scoring_report.md`
+  in `reports/stage11_adsb_prior_scoring/` (committed).
+
+```bash
+python scripts/11_score_tracks_adsb_prior.py \
+  --tracks-dir data/active/tracks_kalman \
+  --priors-dir models/motion_priors \
+  --stage09-dir reports/stage09_physics_scoring \
+  --report-dir reports/stage11_adsb_prior_scoring \
+  --threshold-db -5 0 3 6 9 12 \
+  --date 2022-06-06 \
+  --score-threshold 0.5 \
+  --overwrite
+```
+
+`--self-test` runs without real data; `--w-*` flags adjust component
+weights (priors dominate; continuity/SNR are weak auxiliaries).
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the
