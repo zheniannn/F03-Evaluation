@@ -1,0 +1,7 @@
+ablation,comparison,winner,evidence,interpretation
+Calibration,clean-truth vs track-purity (noise-matched),track_purity,stage16_robustness/calibration_ablation.csv,true retention 0.077 -> 0.963: clean-truth quantiles under-retain noisy tracks; noise-matched calibration fixes the domain shift
+Model family,MLP-DAE vs GRU-AE vs TCN-AE,mlp_dae,stage16_robustness/model_ablation_mlp_gru_tcn.csv,MLP and GRU are close and strong; TCN retains fewer true tracks
+Learned vs interpretable,stage 09 hand physics vs stage 12.5,stage 12.5,stage17_four_day_validation/interpretable_fallback_comparison.csv,stage 12 removes more false tracks in 14/14 defined cells (2 undefined); stage 09 retains slightly more true tracks and stays the interpretable fallback
+Probabilistic latent,stage 12.5 vs stage 13 VAE,stage 12.5,stage13_vae_prior/vae_prior_report.md,the VAE matches but does not beat the deterministic autoencoder; ELBO adds nothing over reconstruction error
+Generative denoiser,stage 12.5 vs stage 15 diffusion residual,stage 12.5,stage15_diffusion_denoising/diffusion_denoising_report.md,"diffusion regularizes tracks and modestly improves gap filling, but is clearly worse as a primary false-track classifier"
+Windowability caveat,high thresholds (9/12 dB) vs -5/0/3/6 dB,n/a (denominator effect),stage17_four_day_validation/windowability_four_day_audit.csv,"sequence methods only score windowable tracks; at 9/12 dB there are ~0 windowable false tracks, so false-reduction is undefined and cross-method comparison is not apples-to-apples there"

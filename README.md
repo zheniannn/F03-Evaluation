@@ -683,6 +683,45 @@ Results are scientifically unchanged (canonical calibration byte-identical; no
 diff in stage-14/16 key tables) — only labels, paths, and added diagnostic
 columns.
 
+## Stage 18 — Final report / paper package
+
+Packages the completed stage 01–17.5 pipeline into a paper-ready deliverable.
+**Stage 18 adds no new model and runs no new experiment**; it retrains nothing
+and changes no scientific result. It reads the **hardened Stage 17.5 artifacts
+as the source of truth** for headline metrics — four-day values are never
+replaced by stale single-day ones.
+
+It produces six final summary CSVs (results, method comparison, ablations,
+reproducibility checklist, limitations, contributions), paper-facing tables, a
+full `final_report.md`, **25 figures**, and a complete **Overleaf package**
+(`main.tex` + `references.bib` + `figures/`, all referenced paths resolving).
+
+> **Scope caveat carried through every artifact.** The radar model is a
+> **point-detection simulation** — there is no raw RF/IQ and no gridded
+> range-Doppler intensity simulation. The "pseudo range-Doppler" figures are
+> **scatter plots of point detections** in (radial velocity, range) space, *not*
+> raw radar RD intensity heatmaps. `references.bib` marks three entries as
+> explicit placeholders rather than inventing citations.
+
+- **Inputs:** `reports/stage07…stage17_four_day_validation/`; optionally
+  `data/active/sim_detections_relocated/` and `tracks_kalman/` for illustrative
+  figures (missing large files degrade to *reasoned* placeholders, never a crash).
+- **Outputs:** `reports/stage18_final_package/` — report, `tables/`, `figures/`,
+  `overleaf/`, and a manifest recording each figure as data-driven, schematic,
+  copied, or placeholder.
+
+```bash
+python scripts/18_build_final_report.py \
+  --reports-root reports \
+  --output-dir reports/stage18_final_package \
+  --project-title "ADS-B-Guided Weak-Target Radar Tracking Under Low SNR and Clutter" \
+  --overwrite
+```
+
+`--self-test` builds a tiny package from synthetic mini-reports (and checks that
+an absent detection file yields a *reasoned* pseudo-RD placeholder). Set
+`--author` / `--institution` for the LaTeX title block.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

@@ -1,0 +1,10 @@
+item,status,evidence,notes
+Deterministic SHA-256 derived seeding in stages 05/06/10,yes,F02 stage-05/06 relocation + stage-10 reservoir sampling,full-pipeline rerun reproduced every count and metric exactly
+All stage validation gates green,yes,each stage script prints a VALIDATION GATE block,gates fail loudly rather than emitting inconsistent reports
+Stage 17.5 regression checks pass,yes,scripts/17p5_regression_checks.py,12 assertions incl. a negative control for the bare-`python` guard
+Canonical stage-12 calibration protected,yes,reports/stage17_four_day_validation/stage17p5_repro_hardening.md,--calibration-output defaults to <report-dir>/calibration/; orchestrators sandbox it
+Internal subprocesses use sys.executable,yes,"scripts/16_robustness_ablation.py, scripts/17_four_day_validation.py",a bare `python` does not exist on all machines
+Undefined false-reduction handled explicitly,yes,utils/common.py safe_reduction/undefined_reason,"zero denominator -> NaN + reason, never 0/1 and never blamed on stage 09"
+Large CSVs / checkpoints git-ignored,yes,.gitignore + git check-ignore,"track files, per-track score CSVs and .pt checkpoints are never committed"
+Four-day validation rerun succeeded,yes,reports/stage17_four_day_validation/,stage-08/09/12.5 generated for all four days; gate enforced gap closed
+Code committed and pushed through the final stage,yes,git log / remote origin,each stage committed with compact reports; large artifacts excluded

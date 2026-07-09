@@ -1,0 +1,7 @@
+contribution_id,contribution,novelty_level,supporting_evidence
+1,An ADS-B-grounded weak-target radar simulation and evaluation framework (real trajectories -> radar truth -> noisy point detections -> evaluation ladder),integration / framework,"F01 stages 01-04, F02 stages 05-06, F03 stages 07-17.5"
+2,Synthetic relocation that preserves ADS-B motion shape while controlling radar geometry (per-trajectory sha256-seeded anchors),methodological,"F02 stage 05 (--relocate-near-radar), reports/relocated_experiment_audit.md"
+3,"A baseline ladder from threshold-only detection through Kalman tracking, hand physics, empirical priors, sequence autoencoders, VAE, and diffusion",systematic evaluation,reports/stage14_method_benchmark/stage14_method_benchmark_report.md
+4,"Noise-matched (track-purity) calibration of a learned sequence prior, which converts a well-discriminating but miscalibrated score into a usable filter",methodological (key),reports/stage12_sequence_priors/ + stage16_robustness/calibration_ablation.csv
+5,Four-day evidence that trajectory-shape scoring suppresses clutter-induced false tracks while retaining true aircraft tracks,empirical result,reports/stage17_four_day_validation/four_day_summary_overall.csv
+6,"A reproducible multi-repo pipeline with deterministic outputs, per-stage validation gates, and regression-checked hardening",engineering / reproducibility,"scripts/17p5_regression_checks.py, stage17p5_repro_hardening.md"

@@ -1,0 +1,9 @@
+method,stage,type,primary_role,true_retention,false_reduction,false_tracks_kept,precision_after,scope,conclusion
+Kalman only,08,classical tracker,baseline / denominator,1.0,0.0,815.0,,four-day (-5..6 dB),"no filtering; keeps all false tracks and so defines the denominator (strict, windowable population)"
+Hand physics scoring,09,rule-based,interpretable fallback,0.9807,0.6315,,0.9779,four-day (-5..6 dB),"strong, transparent, no training; beaten on false reduction by stage 12.5"
+ADS-B marginal priors,11,empirical prior,"evidence, not sufficient",1.0,0.0012,,0.9539,ONE-DAY (2022-06-06),discriminative but does not clearly beat stage 09
+"Sequence AE (MLP-DAE), track-calibrated",12.5,learned sequence prior,PRIMARY false-track filter,0.9731,0.9939,5.0,0.999984,four-day (-5..6 dB),selected method
+"Sequence AE (GRU-AE), track-calibrated",12.5,learned sequence prior,strong alternative,0.9722,0.9791,17.0,0.999946,four-day (-5..6 dB),close second; best at low thresholds
+VAE prior (elbo),13,probabilistic latent prior,not selected,0.9705,0.9798,,1.0,ONE-DAY (2022-06-06),matches but does not beat stage 12.5
+VAE prior (reconstruction),13,probabilistic latent prior,not selected,0.9704,0.9798,,1.0,ONE-DAY (2022-06-06),matches but does not beat stage 12.5
+Diffusion residual classifier,15,DDPM denoiser residual,secondary / regularizer,0.8786,0.5948,,0.9985,ONE-DAY (2022-06-06),useful for denoising/gap filling; clearly worse as a filter

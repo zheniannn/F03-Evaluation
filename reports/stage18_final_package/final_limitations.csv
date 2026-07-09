@@ -1,0 +1,10 @@
+limitation,impact,mitigation_or_future_work
+"Point-detection radar simulation, not raw RF/IQ","Detection-level realism only; no waveform, sidelobe, or receiver effects",A raw RF/range-Doppler intensity simulation would test the detector itself
+Pseudo range-Doppler figures are point-detection scatter plots,They must not be read as radar intensity maps,Generate true RD heatmaps only if gridded intensity data is simulated
+Synthetic relocation of trajectories near the radar,Motion shape is real ADS-B; radar geometry/engagement is synthetic,Deploy against a real radar site with co-located ADS-B truth
+OpenSky ADS-B-derived fixed-wing GA focus,Conclusions are scoped to light general-aviation motion,"Extend to rotorcraft, UAS, and manoeuvring military profiles"
+High-threshold windowability caveat (9/12 dB),Sequence methods have ~0 windowable false tracks there; reduction is undefined,"Compare only at -5/0/3/6 dB, or use a length-matched denominator"
+Track-purity calibration uses truth labels to SELECT calibration tracks,"The score itself never sees labels, but calibration-set selection does",Use a purity proxy (e.g. self-consistency) to make calibration fully unsupervised
+"Learned-method evidence is on simulated detections, not real radar returns",Absolute numbers will not transfer directly to a fielded radar,Validate on recorded radar detections with ADS-B truth
+Diffusion and VAE were not tuned exhaustively,"Their negative results are for the configurations tested, not the families",A scoped sweep could revisit them if a specific gap emerges
+Runtime / deployment not optimized,Throughput and latency for an operational system are unmeasured,A deployment-style runtime and operating-point study
