@@ -1,0 +1,24 @@
+/usr/bin/python3 /home/tzhen/projects/PLSWORK/F03-Evaluation/scripts/12_score_tracks_sequence_prior.py --tracks-dir data/active/tracks_kalman_f04_cube --models-dir /home/tzhen/projects/PLSWORK/F03-Evaluation/models/sequence_priors --stage09-dir /home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage09_physics_scoring --stage11-dir /home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage11_adsb_prior_scoring --report-dir reports/stage22_f04_cube_eval/stage12_sequence_f04_cube --detections-dir data/active/f04_cube_detections --threshold-db 6 --date 2022-06-06 --calibration-mode track_purity --score-threshold 0.5 --calibration-output reports/stage22_f04_cube_eval/generated_calibration/sequence_track_calibration_f04_cube_2022-06-06.json --overwrite --calibration-tracks-dir data/active/tracks_kalman_f04_cube --calibration-date 2022-06-06 --calibration-threshold-db 6 --model mlp_dae
+
+[calib 2022-06-06 thr=6dB] tracks_2022-06-06_thr_6p0dB.csv ...
+track-purity calibration written: reports/stage22_f04_cube_eval/generated_calibration/sequence_track_calibration_f04_cube_2022-06-06.json
+[2022-06-06 thr=6dB] scoring tracks_2022-06-06_thr_6p0dB.csv ...
+[2022-06-06 thr=6dB] track-model rows: 16964, kept: 5501
+
+======================================================================
+VALIDATION GATE (scoring)
+======================================================================
+  scores file nonempty, scores in [0,1], keep boolean: OK
+  scoring uses reconstruction error + holdout calibration only (truth enters afterwards): OK by construction
+  kept-track counts bounded; retention/reduction in [0,1]: OK
+  mlp_dae: median score true=0.877 false=0.698; median recon error true=0.8823 false=1.8854 (report-only) -- separable
+  reference (report-only): stage 9 mean reduction 0.478, stage 11 0.000; stage 12 per model above.
+  Stage 12.5: calibration JSON present; per-model tracks/windows > 0; p99 >= p50; track-calibrated scores in [0,1]: OK
+
+report: /home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage22_f04_cube_eval/stage12_sequence_f04_cube/sequence_prior_report.md
+
+primary calibration mode: track_purity
+mean per model (false reduction / true retention):
+  mlp_dae    0.268 / 0.886
+
+12_score_tracks_sequence_prior completed successfully.

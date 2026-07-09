@@ -1,0 +1,2 @@
+date,alias_token,cfar_type,threshold_scale,cap,confirmed_tracks,true_tracks,false_tracks,track_detection_rate,target_assignment_rate,clutter_assignment_rate,mean_position_rmse_m,median_position_rmse_m,notes
+2022-06-06,6p0,ca,6.0,2000,25717,5260,20457,0.928030303030303,0.9761279705346472,0.8697651779418281,2665.178090597984,2508.2276793682067,"alias thr 6p0dB = F04 CFAR scale 6 (7.78 dB), not a dB SNR threshold"

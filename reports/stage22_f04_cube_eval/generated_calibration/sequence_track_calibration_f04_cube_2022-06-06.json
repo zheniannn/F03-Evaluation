@@ -1,0 +1,26 @@
+{
+  "calibration_mode": "track_purity",
+  "calibration_dates": [
+    "2022-06-06"
+  ],
+  "calibration_thresholds": [
+    6.0
+  ],
+  "min_target_fraction": 0.95,
+  "min_purity": 0.95,
+  "models": {
+    "mlp_dae": {
+      "error_p10": 0.031020627915859224,
+      "error_p25": 0.05200956016778946,
+      "error_p50": 0.19351452589035034,
+      "error_p75": 1.3858681917190552,
+      "error_p90": 2.5063356876373297,
+      "error_p95": 3.478896856307983,
+      "error_p99": 5.798576774597168,
+      "error_mean": 0.8722703433543737,
+      "error_std": 1.2798522656545481,
+      "n_calibration_windows": 3109,
+      "n_calibration_tracks": 833
+    }
+  }
+}

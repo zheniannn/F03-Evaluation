@@ -33,3 +33,15 @@ reports/stage17_four_day_validation/generated/**/*_track_scores.csv
 # stage 09/11 per-track score CSVs (large, regenerable; siblings already ignored)
 reports/stage09_physics_scoring/physics_track_scores.csv
 reports/stage11_adsb_prior_scoring/adsb_prior_track_scores.csv
+
+# stage 22: F04 cube-derived detections imported into F03 (large, regenerable)
+data/active/f04_cube_detections/*.csv
+data/active/f04_cube_detections/*.json
+data/active/tracks_kalman_f04_cube/*.csv
+reports/stage22_f04_cube_eval/generated/*.csv
+reports/stage22_f04_cube_eval/generated/scored_tracks_f04_cube/
+# per-track score CSVs are large and regenerable, as everywhere else in this repo
+reports/stage22_f04_cube_eval/**/*_track_scores.csv
+
+!data/active/f04_cube_detections/.gitkeep
+!data/active/tracks_kalman_f04_cube/.gitkeep

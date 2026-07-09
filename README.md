@@ -722,6 +722,108 @@ python scripts/18_build_final_report.py \
 an absent detection file yields a *reasoned* pseudo-RD placeholder). Set
 `--author` / `--institution` for the LaTeX title block.
 
+## Stage 22 — F04 cube-derived detection evaluation
+
+Stage 22 runs the existing F03 stack (stage 08 tracking, then stage 12.5
+sequence-prior scoring) over **F04 cube-derived CFAR detections** instead of the
+F02 point-detection simulator's output. It answers one question: *does the
+learned sequence-prior filter still suppress false tracks when the detections
+come from structured radar-cube CFAR output?*
+
+It **retrains nothing**, adds no model, and does not modify F04 or the stage-08
+tracker.
+
+**Input.** One F04 Stage-21 export:
+`../F04-RADAR-CUBE/data/active/f03_exports/f04_cube_detections_2022-06-06_cfar_ca_scale_6p0_cap_2000.csv`
+
+### Two warnings that matter
+
+**Small scope.** This is a **200-frame, single-day, single-operating-point**
+stress test. The F02/F03 headline result is a four-day, multi-threshold
+experiment. The F04 run is a structured-clutter stress test, **not** a
+replacement for it, and the two differ in detection source, frame count, day
+count and threshold semantics all at once — no single difference between them is
+attributable to any one cause.
+
+**CFAR scale is not dB.** F04's operating point is `threshold_scale = 6.0`, a
+*linear multiplier* on the local CFAR noise estimate — about **7.78 dB** above
+it. F03 discovers detection files as `detections_<date>_thr_<token>dB.csv` and
+filters them with a numeric `--threshold-db`, so Stage 22 must create a
+`thr_6p0dB` alias. That token is a **compatibility filename label only**; it is
+*not* a 6 dB SNR threshold. Every Stage 22 artifact carries the warning, and
+`data/active/f04_cube_detections/f04_cube_alias_metadata_<date>.json` records the
+real operating point.
+
+### Command
+
+```bash
+python scripts/22_evaluate_f04_cube_detections.py --self-test
+
+python scripts/22_evaluate_f04_cube_detections.py \
+  --f04-export ../F04-RADAR-CUBE/data/active/f03_exports/f04_cube_detections_2022-06-06_cfar_ca_scale_6p0_cap_2000.csv \
+  --truth-dir data/active/radar_truth_relocated \
+  --detections-dir data/active/f04_cube_detections \
+  --tracks-dir data/active/tracks_kalman_f04_cube \
+  --report-dir reports/stage22_f04_cube_eval \
+  --date 2022-06-06 --cfar-type ca --threshold-scale 6.0 --cap 2000 \
+  --max-frames 200 --run-stage08 --run-stage12 --overwrite
+```
+
+`--run-stage09` additionally attempts hand-physics scoring on the F04 tracks and
+documents the outcome if the schema is incompatible.
+
+### Import adaptations
+
+Stage 22 never edits the F04 export. It writes an adapted copy plus an alias into
+`data/active/f04_cube_detections/`, and records every adaptation in the alias
+metadata JSON and the report. Currently one adaptation is required: the F04
+Stage-21 writer serializes with `float_format="%.6g"`, which rounds epoch seconds
+to six significant digits and collapses 200 distinct frame times onto 2 values.
+Stage 08 is immune (it takes `dt` from `--frame-period-s`), but stage 12's window
+features differentiate position with respect to `timestamp`, so the raw column
+would silently corrupt every velocity feature. Stage 22 reconstructs
+`timestamp = frame_id * frame_period_s` — F04 defines
+`frame_id = floor(timestamp / scan_period_s)` — and refuses to proceed unless the
+reconstruction rounds back to the value the export carries. **This is a real bug
+in F04's Stage 21 writer and should be fixed there.**
+
+### Calibration provenance
+
+The noise-matched (`track_purity`) calibration is built from the **F04 cube
+tracks themselves** by pinning `--calibration-tracks-dir` at the F04 track
+directory. That flag defaults to the canonical F02 `data/active/tracks_kalman`,
+which also contains a `thr_6p0dB` file — so omitting it would quietly calibrate
+on F02 point-detection tracks while scoring F04 cube-CFAR tracks, reintroducing
+exactly the noise mismatch stage 12.5 exists to remove. The calibration JSON is
+written inside the Stage 22 report directory; the canonical stage-12 calibration
+is never touched, and the validation gate hashes it to prove so.
+
+### Outputs
+
+```text
+reports/stage22_f04_cube_eval/
+  stage22_f04_cube_eval_report.md
+  f04_import_summary.csv                  what was imported and what was adapted
+  f04_stage08_summary.csv                 tracking on cube detections
+  f04_stage12_summary.csv                 sequence-prior filter metrics
+  f04_cube_vs_f02_point_comparison.csv    3 clearly-labelled rows, not a single delta
+  stage22_key_findings.csv
+  plots/  f04_detection_counts.png  f04_track_counts.png
+          f04_stage12_filter_effect.png   f04_vs_f02_comparison.png
+  stage08_kalman_f04_cube/   stage12_sequence_f04_cube/   generated/ (run logs)
+```
+
+Imported detection CSVs and F04 track CSVs are git-ignored (large, regenerable).
+
+### Next stage
+
+If stage 08 and stage 12.5 both completed, **Stage 23** should sweep 2–3 of the
+Stage 20.5 CFAR operating points (`A_high_pd` scale 4 / cap 10000, `B_balanced`
+scale 6 / cap 2000, `C_conservative` scale 12 / cap 2000) through F03, so
+false-track difficulty can be traced against detector aggressiveness rather than
+inferred from a single point. If they did not, Stage 23 should fix the adapter
+first.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

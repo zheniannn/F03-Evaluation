@@ -1,0 +1,20 @@
+/usr/bin/python3 /home/tzhen/projects/PLSWORK/F03-Evaluation/scripts/08_run_kalman_baseline.py --detections-dir data/active/f04_cube_detections --truth-dir data/active/radar_truth_relocated --tracks-dir data/active/tracks_kalman_f04_cube --report-dir reports/stage22_f04_cube_eval/stage08_kalman_f04_cube --threshold-db 6 --date 2022-06-06 --max-frames 200 --overwrite
+
+
+--- 2022-06-06  threshold 6 dB ---
+frames tracked:        200
+detections in:         262335
+confirmed tracks:      25717
+true tracks:           5260
+false tracks:          20457
+trajectory coverage:   0.928 (490/528)
+fragmentation:         10.73
+target det absorption: 0.976
+clutter det absorption:0.870
+position RMSE (true tracks): mean 2665.2 m, median 2508.2 m
+tracks written:        data/active/tracks_kalman_f04_cube/tracks_2022-06-06_thr_6p0dB.csv
+
+Metrics written to: /home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage22_f04_cube_eval/stage08_kalman_f04_cube/kalman_metrics_by_day.csv
+Report written to:  /home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage22_f04_cube_eval/stage08_kalman_f04_cube/kalman_baseline_report.md
+
+08_run_kalman_baseline completed successfully.

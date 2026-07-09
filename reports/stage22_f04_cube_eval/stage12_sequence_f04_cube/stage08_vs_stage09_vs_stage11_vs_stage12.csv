@@ -1,0 +1,2 @@
+threshold_db,stage08_true_tracks,stage08_false_tracks,stage09_true_retention,stage09_false_reduction,stage11_true_retention,stage11_false_reduction,model,stage12_calibration_mode,stage12_true_retention,stage12_false_reduction,stage12_precision
+6.0,1962,5141,0.981834265314504,0.4781021897810219,1.0,0.0,mlp_dae,track_purity,0.8858307849133538,0.2680412371134021,0.31594255589892745

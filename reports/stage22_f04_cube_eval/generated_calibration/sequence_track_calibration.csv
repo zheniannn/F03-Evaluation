@@ -1,0 +1,2 @@
+model,error_p10,error_p25,error_p50,error_p75,error_p90,error_p95,error_p99,error_mean,error_std,n_calibration_tracks,n_calibration_windows,calibration_dates,calibration_thresholds,min_target_fraction,min_purity
+mlp_dae,0.031020627915859224,0.05200956016778946,0.19351452589035034,1.3858681917190552,2.5063356876373297,3.478896856307983,5.798576774597168,0.8722703433543737,1.2798522656545481,833,3109,2022-06-06,6,0.95,0.95

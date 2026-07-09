@@ -1,0 +1,3 @@
+model,threshold_db,range_bin,stage08_tracks,stage08_true_tracks,stage08_false_tracks,stage12_kept_tracks,stage12_kept_true_tracks,stage12_kept_false_tracks,true_track_retention,false_track_reduction,precision_after,median_sequence_score
+mlp_dae,6.0,0-50 km,4003,1765,2238,3156,1568,1588,0.888385269121813,0.290437890974084,0.4968314321926489,0.738425300103799
+mlp_dae,6.0,50-100 km,3100,197,2903,2345,170,2175,0.8629441624365483,0.25077506028246643,0.07249466950959488,0.749140596810101

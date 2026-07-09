@@ -1,0 +1,2 @@
+date,alias_token,cfar_type,threshold_scale,cap,model,calibration_mode,score_threshold,stage08_true_tracks,stage08_false_tracks,stage12_kept_true_tracks,stage12_kept_false_tracks,true_track_retention,false_track_reduction,precision_before,precision_after,notes
+2022-06-06,6p0,ca,6.0,2000,mlp_dae,track_purity,0.5,1962,5141,1738,3763,0.8858307849133538,0.2680412371134021,0.2762213149373504,0.3159425558989274,
