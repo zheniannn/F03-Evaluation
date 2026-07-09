@@ -1,0 +1,5 @@
+threshold_db,stage12_best_model,stage12_true_retention,stage12_false_reduction,stage13_best_variant,stage13_true_retention,stage13_false_reduction,stage15_diffusion_true_retention,stage15_diffusion_false_reduction,stage15_denoise_rmse_improvement,stage15_gap_fill_improvement,notes
+-5.0,mlp_dae,0.9874077717658633,1.0,elbo,0.9829808165272996,0.9817073170731708,0.8781603541564191,0.4207317073170732,-0.2672855300984802,0.0863279387877463,diffusion residual is a SECONDARY score
+0.0,mlp_dae,0.9812891802651098,0.9375,elbo,0.9768387806862228,0.9375,0.8537589127625975,0.625,-0.18756248188384594,0.08673087574718386,diffusion residual is a SECONDARY score
+3.0,mlp_dae,0.9713205984366102,1.0,elbo,0.9666097220065228,1.0,0.8751876585391106,0.33333333333333337,-0.12122095837401248,0.07502674816296856,diffusion residual is a SECONDARY score
+6.0,mlp_dae,0.971142236174837,1.0,elbo,0.9690292199951702,1.0,0.907208403767206,1.0,-0.043107384786198244,0.082364844763883,diffusion residual is a SECONDARY score

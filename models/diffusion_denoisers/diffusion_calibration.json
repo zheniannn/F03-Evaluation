@@ -1,0 +1,18 @@
+{
+  "calibration_mode": "track_purity",
+  "error_p50": 0.028136582113802433,
+  "error_p99": 0.08397495709359629,
+  "n_calibration_tracks": 60763,
+  "n_calibration_windows": 652982,
+  "calibration_dates": [
+    "2022-06-06"
+  ],
+  "calibration_thresholds": [
+    3.0,
+    6.0,
+    9.0,
+    12.0
+  ],
+  "min_target_fraction": 0.95,
+  "min_purity": 0.95
+}

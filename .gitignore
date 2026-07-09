@@ -21,3 +21,6 @@ reports/stage12_sequence_priors/sequence_track_scores.csv
 models/vae_priors/*.pt
 !models/vae_priors/.gitkeep
 reports/stage13_vae_prior/vae_track_scores.csv
+models/diffusion_denoisers/*.pt
+!models/diffusion_denoisers/.gitkeep
+reports/stage15_diffusion_denoising/diffusion_residual_scores.csv

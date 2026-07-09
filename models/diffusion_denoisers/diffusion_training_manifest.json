@@ -1,0 +1,41 @@
+{
+ "created_by": "Stage 15 diffusion training",
+ "data_source": "data/active/radar_truth_relocated",
+ "train_dates": [
+  "2022-06-06",
+  "2022-06-13",
+  "2022-06-20"
+ ],
+ "holdout_dates": [
+  "2022-06-27"
+ ],
+ "features": [
+  "dx",
+  "dy",
+  "dz",
+  "vx",
+  "vy",
+  "vz",
+  "speed",
+  "vertical_speed",
+  "turn_rate"
+ ],
+ "window_len": 20,
+ "stride": 5,
+ "seed": 42,
+ "n_train_windows": 200000,
+ "n_val_windows": 60000,
+ "checkpoint": "models/diffusion_denoisers/diffusion_denoiser.pt",
+ "normalizer": "models/diffusion_denoisers/normalizer.json",
+ "normalizer_source": "stage12:models/sequence_priors/normalizer.json",
+ "device": "cpu",
+ "epochs": 20,
+ "hidden_dim": 128,
+ "num_blocks": 4,
+ "num_diffusion_steps": 100,
+ "beta_start": 0.0001,
+ "beta_end": 0.02,
+ "best_val_loss": 0.10337936505476633,
+ "validation_denoising": "reports/stage15_diffusion_denoising/diffusion_validation_denoising.csv",
+ "max_train_windows": 200000
+}

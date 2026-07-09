@@ -495,9 +495,64 @@ python scripts/14_benchmark_methods.py \
   --overwrite
 ```
 
-`--self-test` runs on tiny synthetic reports. **Stage 15** should either
-test diffusion specifically for denoising / gap filling, or build a broader
-model-zoo benchmark only if a clearly defined gap remains.
+`--self-test` runs on tiny synthetic reports. **Stage 15** tests diffusion
+specifically for denoising / gap filling.
+
+## Stage 15 — Diffusion trajectory denoising and gap filling
+
+A **narrowly scoped** study — **not** a new primary false-track classifier.
+Stage 14 showed stage 12.5 already removes nearly all false tracks, so
+Stage 15 instead asks whether a **DDPM-style diffusion denoiser** over the
+shared normalized trajectory windows adds value for **noisy-track
+regularization** and **short-gap filling**, with a denoising-residual
+anomaly score kept explicitly secondary. It trains a lightweight temporal
+1D-conv noise-prediction network on clean stage-5 relocated truth windows
+(reusing the stage-12 normalizer) and evaluates three tasks on stage-8
+tracks: (1) synthetic-corruption recovery + smoothness regularization, (2)
+gap filling vs linear interpolation, (3) a track-purity-calibrated residual
+score compared five-way against stage 12.5 / 13. Evaluation uses fast
+single-step denoising (Mode A). **Stage 12.5 remains the primary false-track
+suppression method unless diffusion clearly beats it.**
+
+- **Training inputs:** `data/active/radar_truth_relocated/` (stage-4
+  fallback); a whole day held out for validation.
+- **Evaluation inputs:** stage-8 tracks (`data/active/tracks_kalman/`) +
+  the trained denoiser in `models/diffusion_denoisers/`, plus the stage-12/13
+  reports for the comparison table.
+- **Outputs:** `diffusion_denoiser.pt` (git-ignored) + committed
+  `diffusion_config.json` / `diffusion_training_manifest.json` /
+  `diffusion_calibration.json`; compact tables, six plots, and
+  `diffusion_denoising_report.md` in `reports/stage15_diffusion_denoising/`.
+
+```bash
+# Step A: train
+python scripts/15_train_diffusion_denoiser.py \
+  --truth-dir data/active/radar_truth_relocated \
+  --models-dir models/diffusion_denoisers \
+  --sequence-models-dir models/sequence_priors \
+  --report-dir reports/stage15_diffusion_denoising \
+  --window-len 20 --stride 5 --epochs 20 --batch-size 512 \
+  --max-train-windows 200000 --max-val-windows 60000 \
+  --holdout-date 2022-06-27 --hidden-dim 128 --num-blocks 4 \
+  --num-diffusion-steps 100 --overwrite
+
+# Step B: evaluate (thresholds -5/0/3/6 only; 9/12 dB have windowability
+# denominator issues documented in stage 14)
+python scripts/15_evaluate_diffusion_denoiser.py \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/diffusion_denoisers \
+  --sequence-models-dir models/sequence_priors \
+  --stage12-dir reports/stage12_sequence_priors \
+  --stage13-dir reports/stage13_vae_prior \
+  --report-dir reports/stage15_diffusion_denoising \
+  --threshold-db -5 0 3 6 \
+  --date 2022-06-06 --denoise-t 20 --score-threshold 0.5 --overwrite
+```
+
+Both scripts have `--self-test` and require PyTorch (clear failure message
+if missing). Depending on results, **Stage 16** will be either a compact
+model-zoo benchmark of only the promising families, or a robustness /
+ablation study across all four days and clutter/noise levels.
 
 ## Audit
 
