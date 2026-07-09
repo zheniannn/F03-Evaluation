@@ -390,6 +390,68 @@ standalone (without scoring), and
 `--self-test --calibration-mode track_purity` runs the calibration self-
 test.
 
+## Stage 13 — VAE trajectory prior
+
+The first **probabilistic** sequence-prior stage: trains a variational
+autoencoder (**SequenceVAE**, PyTorch) over the same origin/heading-
+normalized trajectory windows as stage 12, then scores stage-8 confirmed
+tracks by anomaly under two variants — **reconstruction** (recon error
+only) and **elbo** (recon + `beta_score`·KL). Scores use the **noise-
+matched track-purity calibration** from stage 12.5 (score 1 at/below the
+calibration p50 anomaly, 0 at/above the p99), and the run is compared
+**five-way** against stages 8 / 9 / 11 / 12 (best stage-12 model chosen
+automatically). The research question is whether a probabilistic latent
+model beats the stage-12.5 deterministic autoencoders or adds useful latent
+structure. **Not diffusion (stage 14), not the full model zoo.** Truth
+labels are used only for calibration-track selection and evaluation. Where
+available, stage 13 **reuses the stage-12 normalizer** (`models/sequence_priors/normalizer.json`)
+so the two stages are directly comparable.
+
+- **Training inputs:** `data/active/radar_truth_relocated/` (stage-4
+  fallback); whole days held out for validation/calibration.
+- **Scoring inputs:** stage-8 tracks (`data/active/tracks_kalman/`, both
+  schemas) + the trained VAE in `models/vae_priors/`, plus the stage-9/11/12
+  reports for the five-way comparison.
+- **Outputs:** `vae_prior.pt` (git-ignored) + committed `vae_config.json`,
+  `vae_training_manifest.json`, `vae_calibration.json` in
+  `models/vae_priors/`; compact tables, six plots, and `vae_prior_report.md`
+  in `reports/stage13_vae_prior/`.
+
+```bash
+# Step A: train
+python scripts/13_train_vae_prior.py \
+  --truth-dir data/active/radar_truth_relocated \
+  --models-dir models/vae_priors \
+  --sequence-models-dir models/sequence_priors \
+  --report-dir reports/stage13_vae_prior \
+  --window-len 20 --stride 5 --epochs 20 --batch-size 512 \
+  --max-train-windows 200000 --max-val-windows 60000 \
+  --holdout-date 2022-06-27 --latent-dim 32 --beta 0.001 --overwrite
+
+# Step B: score
+python scripts/13_score_tracks_vae_prior.py \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/vae_priors \
+  --sequence-models-dir models/sequence_priors \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage11-dir reports/stage11_adsb_prior_scoring \
+  --stage12-dir reports/stage12_sequence_priors \
+  --report-dir reports/stage13_vae_prior \
+  --threshold-db -5 0 3 6 9 12 \
+  --date 2022-06-06 \
+  --calibration-mode track_purity \
+  --calibration-date 2022-06-06 \
+  --calibration-threshold-db 3 6 9 12 \
+  --calibration-min-target-fraction 0.95 \
+  --calibration-min-purity 0.95 \
+  --score-threshold 0.5 --overwrite
+```
+
+Both scripts have `--self-test`. Requires PyTorch (they fail with a clear
+message if `torch` is missing). **Stage 14** will test diffusion or a
+broader model-zoo benchmark, depending on whether the VAE adds value over
+stage 12.5.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

@@ -18,3 +18,6 @@ data/active/trajectories_10s/*.csv
 models/sequence_priors/*.pt
 !models/sequence_priors/.gitkeep
 reports/stage12_sequence_priors/sequence_track_scores.csv
+models/vae_priors/*.pt
+!models/vae_priors/.gitkeep
+reports/stage13_vae_prior/vae_track_scores.csv

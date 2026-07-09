@@ -1,0 +1,3 @@
+variant,error_p50,error_p90,error_p99,error_mean,n_calibration_tracks,n_calibration_windows,calibration_mode,calibration_dates,calibration_thresholds,min_target_fraction,min_purity
+reconstruction,0.32068386673927307,0.782431846857071,2.9482120704650523,0.5224657242863822,60763,652982,track_purity,2022-06-06,"3,6,9,12",0.95,0.95
+elbo,0.44347041845321655,0.9531751930713661,3.2734881162643354,0.6573196265040745,60763,652982,track_purity,2022-06-06,"3,6,9,12",0.95,0.95

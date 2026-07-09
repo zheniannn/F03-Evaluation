@@ -1,0 +1,29 @@
+{
+  "calibration_mode": "track_purity",
+  "calibration_dates": [
+    "2022-06-06"
+  ],
+  "calibration_thresholds": [
+    3.0,
+    6.0,
+    9.0,
+    12.0
+  ],
+  "min_target_fraction": 0.95,
+  "min_purity": 0.95,
+  "beta_score": 0.001,
+  "variants": {
+    "reconstruction": {
+      "error_p50": 0.32068386673927307,
+      "error_p99": 2.9482120704650523,
+      "n_calibration_tracks": 60763,
+      "n_calibration_windows": 652982
+    },
+    "elbo": {
+      "error_p50": 0.44347041845321655,
+      "error_p99": 3.2734881162643354,
+      "n_calibration_tracks": 60763,
+      "n_calibration_windows": 652982
+    }
+  }
+}

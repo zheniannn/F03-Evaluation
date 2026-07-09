@@ -1,0 +1,39 @@
+{
+ "created_by": "Stage 13 VAE training",
+ "data_source": "data/active/radar_truth_relocated",
+ "train_dates": [
+  "2022-06-06",
+  "2022-06-13",
+  "2022-06-20"
+ ],
+ "holdout_dates": [
+  "2022-06-27"
+ ],
+ "features": [
+  "dx",
+  "dy",
+  "dz",
+  "vx",
+  "vy",
+  "vz",
+  "speed",
+  "vertical_speed",
+  "turn_rate"
+ ],
+ "window_len": 20,
+ "stride": 5,
+ "seed": 42,
+ "n_train_windows": 200000,
+ "n_val_windows": 60000,
+ "checkpoint": "models/vae_priors/vae_prior.pt",
+ "normalizer": "models/vae_priors/normalizer.json",
+ "normalizer_source": "stage12:models/sequence_priors/normalizer.json",
+ "validation_reconstruction": "reports/stage13_vae_prior/vae_validation_reconstruction.csv",
+ "device": "cpu",
+ "epochs": 20,
+ "beta": 0.001,
+ "kl_anneal_epochs": 5,
+ "latent_dim": 32,
+ "hidden_dim": 256,
+ "max_train_windows": 200000
+}

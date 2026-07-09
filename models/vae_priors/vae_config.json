@@ -1,0 +1,20 @@
+{
+ "window_len": 20,
+ "stride": 5,
+ "features": [
+  "dx",
+  "dy",
+  "dz",
+  "vx",
+  "vy",
+  "vz",
+  "speed",
+  "vertical_speed",
+  "turn_rate"
+ ],
+ "input_dim": 9,
+ "hidden_dim": 256,
+ "latent_dim": 32,
+ "beta": 0.001,
+ "kl_anneal_epochs": 5
+}

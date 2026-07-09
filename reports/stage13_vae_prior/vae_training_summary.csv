@@ -1,0 +1,2 @@
+train_windows,val_windows,epochs,best_val_loss,final_train_recon,final_val_recon,final_train_kl,final_val_kl,beta,kl_anneal_epochs,latent_dim,hidden_dim,device,window_len,stride,features
+200000,60000,20,0.051387887424230574,0.0646619808459282,0.04948273351987203,3.590881946258545,3.3642178447723388,0.001,5,32,256,cpu,20,5,"dx,dy,dz,vx,vy,vz,speed,vertical_speed,turn_rate"
