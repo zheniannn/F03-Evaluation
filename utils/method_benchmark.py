@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils.common import md_table
+from utils.common import md_table, safe_ratio, safe_reduction, summarize_defined
 
 # tie-break preference: simpler / more interpretable families win ties
 FAMILY_RANK = {"hand_physics": 0, "sequence_autoencoder": 1, "adsb_marginal_prior": 2,
@@ -32,7 +32,8 @@ UNIFIED_COLUMNS = [
     "date", "threshold_db", "method_id", "method_family", "stage", "model", "variant",
     "calibration_mode", "score_threshold", "stage08_true_tracks", "stage08_false_tracks",
     "kept_true_tracks", "kept_false_tracks", "true_track_retention", "false_track_reduction",
-    "false_track_retention", "precision_before", "precision_after", "delta_precision",
+    "false_track_retention", "false_reduction_defined", "false_reduction_denominator",
+    "precision_before", "precision_after", "delta_precision",
     "track_reduction_total", "notes",
 ]
 
@@ -51,8 +52,10 @@ def _metric_row(date, threshold_db, meta: Dict, st, sf, kt, kf, score_threshold,
                 notes: str = "") -> Dict:
     st, sf, kt, kf = float(st), float(sf), float(kt), float(kf)
     tot, kept = st + sf, kt + kf
-    pb = st / tot if tot > 0 else np.nan
-    pa = kt / kept if kept > 0 else np.nan
+    pb = safe_ratio(st, tot)
+    pa = safe_ratio(kt, kept)
+    # zero false-track denominator => reduction is UNDEFINED (NaN), never 0 or 1
+    reduction = safe_reduction(sf, kf)
     return {
         "date": date, "threshold_db": float(threshold_db),
         "method_id": meta["method_id"], "method_family": meta["method_family"],
@@ -62,12 +65,14 @@ def _metric_row(date, threshold_db, meta: Dict, st, sf, kt, kf, score_threshold,
                             and np.isfinite(score_threshold) else np.nan),
         "stage08_true_tracks": st, "stage08_false_tracks": sf,
         "kept_true_tracks": kt, "kept_false_tracks": kf,
-        "true_track_retention": kt / st if st > 0 else np.nan,
-        "false_track_reduction": 1 - kf / sf if sf > 0 else np.nan,
-        "false_track_retention": kf / sf if sf > 0 else np.nan,
+        "true_track_retention": safe_ratio(kt, st),
+        "false_track_reduction": reduction,
+        "false_track_retention": safe_ratio(kf, sf),
+        "false_reduction_defined": bool(np.isfinite(reduction)),
+        "false_reduction_denominator": sf,
         "precision_before": pb, "precision_after": pa,
         "delta_precision": (pa - pb) if np.isfinite(pa) and np.isfinite(pb) else np.nan,
-        "track_reduction_total": 1 - kept / tot if tot > 0 else np.nan,
+        "track_reduction_total": safe_reduction(tot, kept),
         "notes": notes,
     }
 

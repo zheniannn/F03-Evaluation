@@ -14,7 +14,7 @@
 
 | source | date | threshold_db | method_or_file | available | rows | notes |
 |---:|---:|---:|---:|---:|---:|---:|
-| Stage 08 metrics | 2022-06-06 | -5,0,3,6,9,12 | kalman_metrics_by_day.csv | True | 6 |  |
+| Stage 08 metrics | 2022-06-06,2022-06-13,2022-06-20,2022-06-27 | -5,0,3,6,9,12 | kalman_metrics_by_day.csv | True | 18 |  |
 | Stage 09 metrics | - | -5,0,3,6,9,12 | physics_metrics_by_threshold.csv | True | 6 |  |
 | Stage 12 metrics | - | -5,0,3,6,9,12 | sequence_metrics_by_model_threshold.csv | True | 18 |  |
 | Stage 12 calibration comparison | - | -5,0,3,6,9,12 | sequence_calibration_comparison.csv | True | 36 |  |
@@ -22,7 +22,7 @@
 | Stage 12 filter sweep | - | -5,0,3,6,9,12 | sequence_filter_sweep.csv | True | 162 |  |
 | Stage 14 benchmark | - | -5,0,3,6,9,12 | best_method_by_threshold.csv | True | 6 |  |
 | Stage 14 failure cases | 2022-06-06 | -5,0 | failure_case_candidates.csv | True | 81 |  |
-| Stage 08 large track files | - | - | /home/tzhen/projects/PLSWORK/F03-Evaluation/data/active/tracks_kalman | True | 6 | git-ignored; presence only |
+| Stage 08 large track files | - | - | /home/tzhen/projects/PLSWORK/F03-Evaluation/data/active/tracks_kalman | True | 18 | git-ignored; presence only |
 
 - Dates available: **2022-06-06**.
 - **Limitation:** stage-12.5 scores currently cover a single day (2022-06-06); multi-day robustness is not yet established.

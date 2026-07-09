@@ -63,7 +63,11 @@ def parse_args():
     p.add_argument("--stride", type=int, default=None)
     p.add_argument("--calibration-output", type=str,
                    default=os.path.join(REPO_ROOT, "reports", "stage12_sequence_priors",
-                                        "calibration", "sequence_track_calibration.json"))
+                                        "calibration", "sequence_track_calibration.json"),
+                   help="Where the calibration JSON is written. This standalone tool "
+                        "DELIBERATELY defaults to the canonical stage-12 calibration path -- "
+                        "that is its purpose. Orchestrators must not call it without setting "
+                        "this to a path inside their own report directory.")
     # attributes the shared builder reads but that have no meaning standalone
     p.add_argument("--date", type=str, nargs="*", default=None)
     p.add_argument("--threshold-db", type=float, nargs="+", default=None)

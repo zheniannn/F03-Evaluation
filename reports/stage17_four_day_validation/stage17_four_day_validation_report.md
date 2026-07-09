@@ -38,36 +38,36 @@ All required stage-08/09/12.5 outputs are present; **no expensive reruns needed.
 
 ## Stage 12.5 four-day validation
 
-| date | model | n_thresholds | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | notes |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2022-06-06 | gru_ae | 4 | 77,108 | 187 | 75,347 | 4 | 0.9768 | 0.9798 | 1 | 0.9772 | 0.9786 | 0.9999 | single-day cell |
-| 2022-06-13 | gru_ae | 4 | 75,166 | 203 | 72,875 | 2 | 0.9690 | 0.9842 | 1 | 0.9695 | 0.9901 | 1 | single-day cell |
-| 2022-06-20 | gru_ae | 4 | 96,315 | 216 | 93,894 | 8 | 0.9743 | 0.9629 | 0.9999 | 0.9749 | 0.9630 | 0.9999 | single-day cell |
-| 2022-06-27 | gru_ae | 4 | 75,219 | 209 | 72,699 | 3 | 0.9660 | 0.9789 | 1 | 0.9665 | 0.9856 | 1 | single-day cell |
-| 2022-06-06 | mlp_dae | 4 | 77,108 | 187 | 75,429 | 1 | 0.9778 | 0.9844 | 1 | 0.9782 | 0.9947 | 1 | single-day cell |
-| 2022-06-13 | mlp_dae | 4 | 75,166 | 203 | 73,043 | 1 | 0.9712 | 0.9981 | 1 | 0.9718 | 0.9951 | 1 | single-day cell |
-| 2022-06-20 | mlp_dae | 4 | 96,315 | 216 | 93,850 | 0 | 0.9737 | 1 | 1 | 0.9744 | 1 | 1 | single-day cell |
-| 2022-06-27 | mlp_dae | 4 | 75,219 | 209 | 72,760 | 3 | 0.9666 | 0.9947 | 1 | 0.9673 | 0.9856 | 1 | single-day cell |
+| date | model | n_thresholds | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | n_false_reduction_defined | n_false_reduction_undefined | notes |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2022-06-06 | gru_ae | 4 | 77,108 | 187 | 75,347 | 4 | 0.9768 | 0.9798 | 1 | 0.9772 | 0.9786 | 0.9999 | 4 | 0 | single-day cell |
+| 2022-06-13 | gru_ae | 4 | 75,166 | 203 | 72,875 | 2 | 0.9690 | 0.9842 | 1 | 0.9695 | 0.9901 | 1 | 3 | 1 | single-day cell |
+| 2022-06-20 | gru_ae | 4 | 96,315 | 216 | 93,894 | 8 | 0.9743 | 0.9629 | 0.9999 | 0.9749 | 0.9630 | 0.9999 | 4 | 0 | single-day cell |
+| 2022-06-27 | gru_ae | 4 | 75,219 | 209 | 72,699 | 3 | 0.9660 | 0.9789 | 1 | 0.9665 | 0.9856 | 1 | 3 | 1 | single-day cell |
+| 2022-06-06 | mlp_dae | 4 | 77,108 | 187 | 75,429 | 1 | 0.9778 | 0.9844 | 1 | 0.9782 | 0.9947 | 1 | 4 | 0 | single-day cell |
+| 2022-06-13 | mlp_dae | 4 | 75,166 | 203 | 73,043 | 1 | 0.9712 | 0.9981 | 1 | 0.9718 | 0.9951 | 1 | 3 | 1 | single-day cell |
+| 2022-06-20 | mlp_dae | 4 | 96,315 | 216 | 93,850 | 0 | 0.9737 | 1 | 1 | 0.9744 | 1 | 1 | 4 | 0 | single-day cell |
+| 2022-06-27 | mlp_dae | 4 | 75,219 | 209 | 72,760 | 3 | 0.9666 | 0.9947 | 1 | 0.9673 | 0.9856 | 1 | 3 | 1 | single-day cell |
 
 ### By threshold (pooled across days)
 
-| threshold_db | model | n_dates | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | notes |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| -5 | gru_ae | 4 | 85,496 | 719 | 84,049 | 12 | 0.9827 | 0.9836 | 0.9999 | 0.9831 | 0.9833 | 0.9999 |  |
-| 0 | gru_ae | 4 | 87,370 | 76 | 85,130 | 5 | 0.9742 | 0.9314 | 0.9999 | 0.9744 | 0.9342 | 0.9999 |  |
-| 3 | gru_ae | 4 | 81,133 | 18 | 78,384 | 0 | 0.9658 | 1 | 1 | 0.9661 | 1 | 1 |  |
-| 6 | gru_ae | 4 | 69,809 | 2 | 67,252 | 0 | 0.9633 | 1 | 1 | 0.9634 | 1 | 1 |  |
-| -5 | mlp_dae | 4 | 85,496 | 719 | 84,252 | 4 | 0.9851 | 0.9946 | 0.9999 | 0.9854 | 0.9944 | 1 |  |
-| 0 | mlp_dae | 4 | 87,370 | 76 | 85,308 | 1 | 0.9763 | 0.9844 | 1 | 0.9764 | 0.9868 | 1 |  |
-| 3 | mlp_dae | 4 | 81,133 | 18 | 78,383 | 0 | 0.9660 | 1 | 1 | 0.9661 | 1 | 1 |  |
-| 6 | mlp_dae | 4 | 69,809 | 2 | 67,139 | 0 | 0.9618 | 1 | 1 | 0.9618 | 1 | 1 |  |
+| threshold_db | model | n_dates | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | n_false_reduction_defined | n_false_reduction_undefined | notes |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| -5 | gru_ae | 4 | 85,496 | 719 | 84,049 | 12 | 0.9827 | 0.9836 | 0.9999 | 0.9831 | 0.9833 | 0.9999 | 4 | 0 |  |
+| 0 | gru_ae | 4 | 87,370 | 76 | 85,130 | 5 | 0.9742 | 0.9314 | 0.9999 | 0.9744 | 0.9342 | 0.9999 | 4 | 0 |  |
+| 3 | gru_ae | 4 | 81,133 | 18 | 78,384 | 0 | 0.9658 | 1 | 1 | 0.9661 | 1 | 1 | 4 | 0 |  |
+| 6 | gru_ae | 4 | 69,809 | 2 | 67,252 | 0 | 0.9633 | 1 | 1 | 0.9634 | 1 | 1 | 2 | 2 |  |
+| -5 | mlp_dae | 4 | 85,496 | 719 | 84,252 | 4 | 0.9851 | 0.9946 | 0.9999 | 0.9854 | 0.9944 | 1 | 4 | 0 |  |
+| 0 | mlp_dae | 4 | 87,370 | 76 | 85,308 | 1 | 0.9763 | 0.9844 | 1 | 0.9764 | 0.9868 | 1 | 4 | 0 |  |
+| 3 | mlp_dae | 4 | 81,133 | 18 | 78,383 | 0 | 0.9660 | 1 | 1 | 0.9661 | 1 | 1 | 4 | 0 |  |
+| 6 | mlp_dae | 4 | 69,809 | 2 | 67,139 | 0 | 0.9618 | 1 | 1 | 0.9618 | 1 | 1 | 2 | 2 |  |
 
 ### Overall
 
-| model | dates_included | thresholds_included | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | recommended | recommendation_reason |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| gru_ae | 2022-06-06,2022-06-13,2022-06-20,2022-06-27 | -5,0,3,6 | 323,808 | 815 | 314,815 | 17 | 0.9715 | 0.9757 | 1 | 0.9722 | 0.9791 | 0.9999 | False |  |
-| mlp_dae | 2022-06-06,2022-06-13,2022-06-20,2022-06-27 | -5,0,3,6 | 323,808 | 815 | 315,082 | 5 | 0.9723 | 0.9940 | 1 | 0.9731 | 0.9939 | 1 | True | best mean false reduction at >=0.95 retention |
+| model | dates_included | thresholds_included | stage08_true_tracks | stage08_false_tracks | stage12_kept_true_tracks | stage12_kept_false_tracks | mean_true_retention | mean_false_reduction | mean_precision_after | pooled_true_retention | pooled_false_reduction | pooled_precision_after | n_false_reduction_defined | n_false_reduction_undefined | recommended | recommendation_reason |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| gru_ae | 2022-06-06,2022-06-13,2022-06-20,2022-06-27 | -5,0,3,6 | 323,808 | 815 | 314,815 | 17 | 0.9715 | 0.9757 | 1 | 0.9722 | 0.9791 | 0.9999 | 14 | 2 | False |  |
+| mlp_dae | 2022-06-06,2022-06-13,2022-06-20,2022-06-27 | -5,0,3,6 | 323,808 | 815 | 315,082 | 5 | 0.9723 | 0.9940 | 1 | 0.9731 | 0.9939 | 1 | 14 | 2 | True | best mean false reduction at >=0.95 retention |
 
 ## MLP vs GRU
 
@@ -83,24 +83,24 @@ MLP remains the best overall model; GRU stays the strong low-threshold alternati
 
 ## Stage 09 interpretable fallback comparison
 
-| date | threshold_db | stage09_true_retention | stage09_false_reduction | stage09_precision_after | best_stage12_model | stage12_true_retention | stage12_false_reduction | stage12_precision_after | stage12_minus_stage09_true_retention | stage12_minus_stage09_false_reduction | stage12_minus_stage09_precision | interpretation |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2022-06-06 | -5 | 0.9735 | 0.7879 | 0.9501 | mlp_dae | 0.9874 | 1 | 1 | 0.0139 | 0.2121 | 0.0499 | stage-12 wins on false reduction |
-| 2022-06-06 | 0 | 0.9854 | 0.6365 | 0.9810 | mlp_dae | 0.9813 | 0.9375 | 1 | -0.0041 | 0.3010 | 0.0189 | stage-12 wins on false reduction |
-| 2022-06-06 | 3 | 0.9844 | 0.5524 | 0.9910 | mlp_dae | 0.9713 | 1 | 1 | -0.0130 | 0.4476 | 0.0090 | stage-12 wins on false reduction |
-| 2022-06-06 | 6 | 0.9818 | 0.4781 | 0.9954 | mlp_dae | 0.9711 | 1 | 1 | -0.0107 | 0.5219 | 0.0046 | stage-12 wins on false reduction |
-| 2022-06-13 | -5 | 0.9731 | 0.7865 | 0.9476 | mlp_dae | 0.9833 | 0.9943 | 0.9999 | 0.0102 | 0.2077 | 0.0524 | stage-12 wins on false reduction |
-| 2022-06-13 | 0 | 0.9852 | 0.6394 | 0.9808 | mlp_dae | 0.9757 | 1 | 1 | -0.0095 | 0.3606 | 0.0192 | stage-12 wins on false reduction |
-| 2022-06-13 | 3 | 0.9865 | 0.5383 | 0.9906 | mlp_dae | 0.9649 | 1 | 1 | -0.0216 | 0.4617 | 0.0094 | stage-12 wins on false reduction |
-| 2022-06-13 | 6 | 0.9841 | 0.4745 | 0.9955 | mlp_dae | 0.9607 | nan | 1 | -0.0234 | nan | 0.0045 | undefined: no windowable false tracks for stage-12 in this cell |
-| 2022-06-20 | -5 | 0.9731 | 0.7889 | 0.9597 | mlp_dae | 0.9896 | 1 | 1 | 0.0165 | 0.2111 | 0.0403 | stage-12 wins on false reduction |
-| 2022-06-20 | 0 | 0.9826 | 0.6301 | 0.9846 | mlp_dae | 0.9766 | 1 | 1 | -0.0060 | 0.3699 | 0.0154 | stage-12 wins on false reduction |
-| 2022-06-20 | 3 | 0.9826 | 0.5733 | 0.9929 | mlp_dae | 0.9676 | 1 | 1 | -0.0150 | 0.4267 | 0.0071 | stage-12 wins on false reduction |
-| 2022-06-20 | 6 | 0.9781 | 0.4525 | 0.9963 | mlp_dae | 0.9609 | 1 | 1 | -0.0172 | 0.5475 | 0.0037 | stage-12 wins on false reduction |
-| 2022-06-27 | -5 | 0.9729 | 0.7890 | 0.9490 | mlp_dae | 0.9803 | 0.9840 | 0.9998 | 0.0074 | 0.1949 | 0.0509 | stage-12 wins on false reduction |
-| 2022-06-27 | 0 | 0.9835 | 0.6471 | 0.9815 | mlp_dae | 0.9718 | 1 | 1 | -0.0118 | 0.3529 | 0.0185 | stage-12 wins on false reduction |
-| 2022-06-27 | 3 | 0.9868 | 0.5416 | 0.9906 | mlp_dae | 0.9600 | 1 | 1 | -0.0268 | 0.4584 | 0.0094 | stage-12 wins on false reduction |
-| 2022-06-27 | 6 | 0.9841 | 0.4982 | 0.9955 | mlp_dae | 0.9543 | nan | 1 | -0.0298 | nan | 0.0045 | undefined: no windowable false tracks for stage-12 in this cell |
+| date | threshold_db | stage09_true_retention | stage09_false_reduction | stage09_precision_after | best_stage12_model | stage12_true_retention | stage12_false_reduction | stage12_precision_after | stage12_minus_stage09_true_retention | stage12_minus_stage09_false_reduction | stage12_minus_stage09_precision | false_reduction_defined | false_reduction_denominator | undefined_reason | interpretation |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2022-06-06 | -5 | 0.9735 | 0.7879 | 0.9501 | mlp_dae | 0.9874 | 1 | 1 | 0.0139 | 0.2121 | 0.0499 | True | 164 |  | stage-12 wins on false reduction |
+| 2022-06-06 | 0 | 0.9854 | 0.6365 | 0.9810 | mlp_dae | 0.9813 | 0.9375 | 1 | -0.0041 | 0.3010 | 0.0189 | True | 16 |  | stage-12 wins on false reduction |
+| 2022-06-06 | 3 | 0.9844 | 0.5524 | 0.9910 | mlp_dae | 0.9713 | 1 | 1 | -0.0130 | 0.4476 | 0.0090 | True | 6 |  | stage-12 wins on false reduction |
+| 2022-06-06 | 6 | 0.9818 | 0.4781 | 0.9954 | mlp_dae | 0.9711 | 1 | 1 | -0.0107 | 0.5219 | 0.0046 | True | 1 |  | stage-12 wins on false reduction |
+| 2022-06-13 | -5 | 0.9731 | 0.7865 | 0.9476 | mlp_dae | 0.9833 | 0.9943 | 0.9999 | 0.0102 | 0.2077 | 0.0524 | True | 174 |  | stage-12 wins on false reduction |
+| 2022-06-13 | 0 | 0.9852 | 0.6394 | 0.9808 | mlp_dae | 0.9757 | 1 | 1 | -0.0095 | 0.3606 | 0.0192 | True | 24 |  | stage-12 wins on false reduction |
+| 2022-06-13 | 3 | 0.9865 | 0.5383 | 0.9906 | mlp_dae | 0.9649 | 1 | 1 | -0.0216 | 0.4617 | 0.0094 | True | 5 |  | stage-12 wins on false reduction |
+| 2022-06-13 | 6 | 0.9841 | 0.4745 | 0.9955 | mlp_dae | 0.9607 | nan | 1 | -0.0234 | nan | 0.0045 | False | 0 | undefined: no windowable false tracks for this cell | undefined: no windowable false tracks for this cell |
+| 2022-06-20 | -5 | 0.9731 | 0.7889 | 0.9597 | mlp_dae | 0.9896 | 1 | 1 | 0.0165 | 0.2111 | 0.0403 | True | 194 |  | stage-12 wins on false reduction |
+| 2022-06-20 | 0 | 0.9826 | 0.6301 | 0.9846 | mlp_dae | 0.9766 | 1 | 1 | -0.0060 | 0.3699 | 0.0154 | True | 17 |  | stage-12 wins on false reduction |
+| 2022-06-20 | 3 | 0.9826 | 0.5733 | 0.9929 | mlp_dae | 0.9676 | 1 | 1 | -0.0150 | 0.4267 | 0.0071 | True | 4 |  | stage-12 wins on false reduction |
+| 2022-06-20 | 6 | 0.9781 | 0.4525 | 0.9963 | mlp_dae | 0.9609 | 1 | 1 | -0.0172 | 0.5475 | 0.0037 | True | 1 |  | stage-12 wins on false reduction |
+| 2022-06-27 | -5 | 0.9729 | 0.7890 | 0.9490 | mlp_dae | 0.9803 | 0.9840 | 0.9998 | 0.0074 | 0.1949 | 0.0509 | True | 187 |  | stage-12 wins on false reduction |
+| 2022-06-27 | 0 | 0.9835 | 0.6471 | 0.9815 | mlp_dae | 0.9718 | 1 | 1 | -0.0118 | 0.3529 | 0.0185 | True | 19 |  | stage-12 wins on false reduction |
+| 2022-06-27 | 3 | 0.9868 | 0.5416 | 0.9906 | mlp_dae | 0.9600 | 1 | 1 | -0.0268 | 0.4584 | 0.0094 | True | 3 |  | stage-12 wins on false reduction |
+| 2022-06-27 | 6 | 0.9841 | 0.4982 | 0.9955 | mlp_dae | 0.9543 | nan | 1 | -0.0298 | nan | 0.0045 | False | 0 | undefined: no windowable false tracks for this cell | undefined: no windowable false tracks for this cell |
 
 - Stage 12 removes more false tracks than Stage 09 in **14/16** cells; **Stage 09 hand physics remains the recommended
   interpretable fallback** where transparency matters more than peak reduction.

@@ -54,12 +54,20 @@ def _sel(df, model=None, thresholds=None, mode=None):
 # =============================================================================
 
 def detect_dates(paths: Dict[str, str]) -> List[str]:
-    dates = set()
-    for key in ("stage08_metrics", "stage12_scores"):
-        df = read_csv_safe(paths.get(key, ""))
-        if df is not None and "date" in df.columns:
-            dates.update(df["date"].astype(str).unique())
-    return sorted(dates)
+    """Dates for which STAGE-12 evidence exists -- stage 12.5 is what stage 16 audits.
+
+    Deliberately NOT a union with stage-08 dates: stage 08 may cover more days than
+    stage 12 has been scored on (this is exactly what stage 17 exists to close), and
+    unioning them would mislabel single-day stage-12 evidence as multi-day."""
+    s12 = read_csv_safe(paths.get("stage12_scores", ""))
+    if s12 is not None and "date" in s12.columns and len(s12):
+        return sorted(s12["date"].astype(str).unique())
+    # no per-track stage-12 scores: fall back to stage-08 coverage, but that is only
+    # an upper bound on the days stage 12 was actually scored for.
+    s08 = read_csv_safe(paths.get("stage08_metrics", ""))
+    if s08 is not None and "date" in s08.columns:
+        return sorted(s08["date"].astype(str).unique())
+    return []
 
 
 def build_inventory(paths: Dict[str, str], tracks_dir: str, thresholds) -> pd.DataFrame:

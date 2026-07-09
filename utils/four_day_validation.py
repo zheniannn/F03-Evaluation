@@ -20,19 +20,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils.common import md_table
+from utils.common import (md_table, safe_ratio, safe_reduction, summarize_defined,
+                          undefined_reason)
 
 HIGH_THRESHOLDS = {9.0, 12.0}
 EXPECTED_DAYS = ["2022-06-06", "2022-06-13", "2022-06-20", "2022-06-27"]
 
 
 def _metrics_from_counts(kt, sf_kf, st, sf):
-    """Return (retention, reduction, precision_before, precision_after) from counts."""
+    """Return (retention, reduction, precision_before, precision_after) from counts.
+
+    A zero false-track denominator yields NaN reduction (undefined), never 0 or 1."""
     kt, kf, st, sf = float(kt), float(sf_kf), float(st), float(sf)
-    return (kt / st if st else np.nan,
-            1 - kf / sf if sf else np.nan,
-            st / (st + sf) if (st + sf) else np.nan,
-            kt / (kt + kf) if (kt + kf) else np.nan)
+    return (safe_ratio(kt, st),
+            safe_reduction(sf, kf),
+            safe_ratio(st, st + sf),
+            safe_ratio(kt, kt + kf))
 
 
 # =============================================================================
@@ -130,14 +133,18 @@ def _agg(df, group_cols):
         kf = g["stage12_kept_false_tracks"].sum()
         pooled = _metrics_from_counts(kt, kf, st, sf)
         row = dict(zip(group_cols, keys))
+        # means over DEFINED cells only; undefined (zero-denominator) cells counted
+        n_def, n_undef = summarize_defined(g["false_track_reduction"])
         row.update({
             "stage08_true_tracks": st, "stage08_false_tracks": sf,
             "stage12_kept_true_tracks": kt, "stage12_kept_false_tracks": kf,
             "mean_true_retention": g["true_track_retention"].mean(),
-            "mean_false_reduction": g["false_track_reduction"].mean(),
+            "mean_false_reduction": g["false_track_reduction"].mean(),  # pandas skips NaN
             "mean_precision_after": g["precision_after"].mean(),
             "pooled_true_retention": pooled[0], "pooled_false_reduction": pooled[1],
-            "pooled_precision_after": pooled[3]})
+            "pooled_precision_after": pooled[3],
+            "n_false_reduction_defined": n_def,
+            "n_false_reduction_undefined": n_undef})
         rows.append((row, g))
     return rows
 
@@ -152,7 +159,8 @@ def summary_by_day(s12_metrics, thresholds) -> pd.DataFrame:
     cols = ["date", "model", "n_thresholds", "stage08_true_tracks", "stage08_false_tracks",
             "stage12_kept_true_tracks", "stage12_kept_false_tracks", "mean_true_retention",
             "mean_false_reduction", "mean_precision_after", "pooled_true_retention",
-            "pooled_false_reduction", "pooled_precision_after", "notes"]
+            "pooled_false_reduction", "pooled_precision_after",
+            "n_false_reduction_defined", "n_false_reduction_undefined", "notes"]
     return pd.DataFrame(out)[cols].sort_values(["model", "date"]).reset_index(drop=True)
 
 
@@ -166,7 +174,8 @@ def summary_by_threshold(s12_metrics, thresholds) -> pd.DataFrame:
     cols = ["threshold_db", "model", "n_dates", "stage08_true_tracks", "stage08_false_tracks",
             "stage12_kept_true_tracks", "stage12_kept_false_tracks", "mean_true_retention",
             "mean_false_reduction", "mean_precision_after", "pooled_true_retention",
-            "pooled_false_reduction", "pooled_precision_after", "notes"]
+            "pooled_false_reduction", "pooled_precision_after",
+            "n_false_reduction_defined", "n_false_reduction_undefined", "notes"]
     return pd.DataFrame(out)[cols].sort_values(["model", "threshold_db"]).reset_index(drop=True)
 
 
@@ -195,6 +204,7 @@ def summary_overall(s12_metrics, thresholds, all_days_present) -> pd.DataFrame:
             "stage08_false_tracks", "stage12_kept_true_tracks", "stage12_kept_false_tracks",
             "mean_true_retention", "mean_false_reduction", "mean_precision_after",
             "pooled_true_retention", "pooled_false_reduction", "pooled_precision_after",
+            "n_false_reduction_defined", "n_false_reduction_undefined",
             "recommended", "recommendation_reason"]
     return pd.DataFrame(rows)[cols].sort_values("model").reset_index(drop=True), best_model
 
@@ -257,13 +267,19 @@ def interpretable_fallback(s09_ctx, s12_metrics, thresholds, best_model) -> pd.D
         dtr = r["true_track_retention"] - s9tr
         dfr = r["false_track_reduction"] - s9fr
         dpa = r["precision_after"] - s9pa
+
+        # The false-track denominator for stage 12 is its WINDOWABLE false tracks.
+        denom = r.get("windowable_false_tracks", r["stage08_false_tracks"])
+        s12_defined = bool(np.isfinite(r["false_track_reduction"]))
+        reason = "" if s12_defined else undefined_reason(denom, windowable=True)
+
         if np.isfinite(dfr):
             interp = ("stage-12 wins on false reduction" if dfr > 0.01
                       else "stage-09 competitive")
-        elif not np.isfinite(r["false_track_reduction"]):
-            # stage-12 saw no windowable false tracks here: reduction is undefined,
-            # NOT a stage-09 win and NOT missing stage-09 data
-            interp = "undefined: no windowable false tracks for stage-12 in this cell"
+        elif not s12_defined:
+            # zero false-track denominator: reduction is UNDEFINED. Not a stage-12
+            # win, not a loss, and emphatically not missing stage-09 data.
+            interp = reason
         else:
             interp = "stage-09 unavailable"
         rows.append({"date": date, "threshold_db": thr,
@@ -274,7 +290,11 @@ def interpretable_fallback(s09_ctx, s12_metrics, thresholds, best_model) -> pd.D
                      "stage12_precision_after": r["precision_after"],
                      "stage12_minus_stage09_true_retention": dtr,
                      "stage12_minus_stage09_false_reduction": dfr,
-                     "stage12_minus_stage09_precision": dpa, "interpretation": interp})
+                     "stage12_minus_stage09_precision": dpa,
+                     "false_reduction_defined": s12_defined,
+                     "false_reduction_denominator": denom,
+                     "undefined_reason": reason,
+                     "interpretation": interp})
     return pd.DataFrame(rows).sort_values(["date", "threshold_db"]).reset_index(drop=True)
 
 

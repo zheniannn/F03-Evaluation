@@ -86,9 +86,14 @@ def maybe_run_missing(args, paths, stage12_dates):
               "cover all track-file dates).")
         return
     thr = " ".join(f"{t:g}" for t in args.threshold_db)
-    cmd = ["python", "scripts/12_score_tracks_sequence_prior.py",
+    # keep this run's calibration inside our own output dir so it can never
+    # overwrite the canonical stage-12 calibration artifact (stage 17.5)
+    cal_out = os.path.join(args.output_dir, "generated_calibration",
+                           "sequence_track_calibration.json")
+    cmd = [sys.executable, "scripts/12_score_tracks_sequence_prior.py",
            "--tracks-dir", args.tracks_dir, "--models-dir", args.models_dir,
-           "--report-dir", args.stage12_dir, "--threshold-db", *thr.split(),
+           "--report-dir", args.stage12_dir, "--calibration-output", cal_out,
+           "--threshold-db", *thr.split(),
            "--date", *missing, "--calibration-mode", "track_purity",
            "--calibration-threshold-db", "3", "6", "9", "12", "--score-threshold", "0.5",
            "--overwrite"]

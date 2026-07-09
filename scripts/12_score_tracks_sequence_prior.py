@@ -113,9 +113,12 @@ def parse_args():
     parser.add_argument("--calibration-min-purity", type=float, default=0.95)
     parser.add_argument("--calibration-max-false-tracks", type=int, default=0,
                         help="Sanity guard: calibration tracks should be true tracks only.")
-    parser.add_argument("--calibration-output", type=str,
-                        default=os.path.join(REPO_ROOT, "reports", "stage12_sequence_priors",
-                                             "calibration", "sequence_track_calibration.json"))
+    parser.add_argument("--calibration-output", type=str, default=None,
+                        help="Where the track-purity calibration JSON is written. Defaults to "
+                             "<--report-dir>/calibration/sequence_track_calibration.json. "
+                             "ORCHESTRATORS MUST SET THIS to a path inside their own report "
+                             "directory, so a per-day rerun can never overwrite the canonical "
+                             "stage-12 calibration artifact.")
     parser.add_argument("--compare-calibration", action="store_true",
                         help="Score under both clean-truth and track-purity calibrations.")
     return parser.parse_args()
@@ -279,9 +282,21 @@ def build_track_purity_calibration(models, normalizer, wcfg, args, device):
     return cal_track, meta
 
 
+def resolve_calibration_output(args) -> str:
+    """Calibration JSON lives under the run's OWN report dir unless overridden.
+
+    This keeps a per-day/orchestrated rerun from silently overwriting the canonical
+    stage-12 calibration artifact: the canonical path is only produced when the run
+    is genuinely targeting the canonical --report-dir (stage 17.5 hardening)."""
+    if getattr(args, "calibration_output", None):
+        return args.calibration_output
+    return os.path.join(args.report_dir, "calibration", "sequence_track_calibration.json")
+
+
 def run_scoring(args) -> dict:
     from utils.sequence_models import load_model, resolve_device
 
+    args.calibration_output = resolve_calibration_output(args)
     key_output = os.path.join(args.report_dir, "sequence_track_scores.csv")
     if os.path.exists(key_output) and not args.overwrite:
         raise SystemExit(f"Output already exists (pass --overwrite to regenerate): {key_output}")

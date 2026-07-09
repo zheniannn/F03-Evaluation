@@ -657,6 +657,32 @@ runs on tiny synthetic reports. When all four days are present the report
 declares the single-day limitation **closed**; otherwise it stays **open** and
 the run plan lists exactly what to run.
 
+### Stage 17.5 — Reproducibility hardening
+
+A bug-fix pass, **not a new model** — see
+[`reports/stage17_four_day_validation/stage17p5_repro_hardening.md`](reports/stage17_four_day_validation/stage17p5_repro_hardening.md).
+It fixes three defects found while running the four-day validation, with
+regression checks so they cannot return:
+
+1. **`sys.executable`** for every internal Python subprocess (a bare `python`
+   does not exist on all machines).
+2. **Calibration-overwrite prevention** — `--calibration-output` now defaults to
+   `<--report-dir>/calibration/`, and orchestrators sandbox it inside their own
+   output directory, so a per-day rerun can never clobber the canonical stage-12
+   calibration artifact.
+3. **Undefined false-reduction cells** — a zero false-track denominator is now
+   `NaN` + an explicit `undefined_reason`, never `0`/`1` and never misattributed
+   to missing stage-09 data. Aggregates average defined cells and report the
+   undefined count.
+
+```bash
+python scripts/17p5_regression_checks.py   # 11 guards; run before packaging
+```
+
+Results are scientifically unchanged (canonical calibration byte-identical; no
+diff in stage-14/16 key tables) — only labels, paths, and added diagnostic
+columns.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

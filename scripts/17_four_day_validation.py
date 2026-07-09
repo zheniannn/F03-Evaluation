@@ -221,8 +221,9 @@ def run_missing(args, availability):
         return [d for d, ok in g.items() if not ok]
 
     def run(cmd, stage, date):
-        # use the running interpreter (this environment has python3, not `python`)
-        cmd = [sys.executable if c == "python" else c for c in cmd]
+        # internal python invocations must use the running interpreter, never a
+        # bare `python` (which may not exist on PATH). Enforced, not patched up.
+        assert cmd[0] == sys.executable, f"internal subprocess must use sys.executable: {cmd[0]!r}"
         print(f"[run-missing:{stage} {date}] " + " ".join(cmd), flush=True)
         try:
             r = subprocess.run(cmd, cwd=REPO_ROOT)
@@ -234,14 +235,14 @@ def run_missing(args, availability):
 
     if args.run_missing_stage08:
         for d in missing_dates("stage08_metrics_available"):
-            run(["python", "scripts/08_run_kalman_baseline.py", "--detections-dir",
+            run([sys.executable, "scripts/08_run_kalman_baseline.py", "--detections-dir",
                  args.detections_dir, "--truth-dir", args.truth_dir, "--tracks-dir",
                  args.tracks_dir, "--report-dir", args.stage08_dir, "--threshold-db", *thr_str,
                  "--date", d, "--overwrite"], "stage08", d)
     if args.run_missing_stage09:
         for d in missing_dates("stage09_metrics_available"):
             out = os.path.join(args.output_dir, "generated", "stage09", d)
-            run(["python", "scripts/09_score_tracks_physics.py", "--tracks-dir", args.tracks_dir,
+            run([sys.executable, "scripts/09_score_tracks_physics.py", "--tracks-dir", args.tracks_dir,
                  "--detections-dir", args.detections_dir, "--report-dir", out,
                  "--threshold-db", *thr_str, "--date", d, "--overwrite"], "stage09", d)
     if args.run_missing_stage12:
@@ -253,7 +254,7 @@ def run_missing(args, availability):
             # otherwise default to the MAIN stage-12 calibration dir and clobber the
             # committed 2022-06-06 calibration artifact with this day's band.
             cal_out = os.path.join(out, "calibration", "sequence_track_calibration.json")
-            run(["python", "scripts/12_score_tracks_sequence_prior.py", "--tracks-dir",
+            run([sys.executable, "scripts/12_score_tracks_sequence_prior.py", "--tracks-dir",
                  args.tracks_dir, "--models-dir", args.models_dir, "--report-dir", out,
                  "--calibration-output", cal_out,
                  "--threshold-db", *thr_str, "--date", d, "--calibration-mode",
