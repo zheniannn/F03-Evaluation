@@ -257,8 +257,15 @@ def interpretable_fallback(s09_ctx, s12_metrics, thresholds, best_model) -> pd.D
         dtr = r["true_track_retention"] - s9tr
         dfr = r["false_track_reduction"] - s9fr
         dpa = r["precision_after"] - s9pa
-        interp = ("stage-12 wins on false reduction" if np.isfinite(dfr) and dfr > 0.01 else
-                  "stage-09 competitive" if np.isfinite(dfr) else "stage-09 unavailable")
+        if np.isfinite(dfr):
+            interp = ("stage-12 wins on false reduction" if dfr > 0.01
+                      else "stage-09 competitive")
+        elif not np.isfinite(r["false_track_reduction"]):
+            # stage-12 saw no windowable false tracks here: reduction is undefined,
+            # NOT a stage-09 win and NOT missing stage-09 data
+            interp = "undefined: no windowable false tracks for stage-12 in this cell"
+        else:
+            interp = "stage-09 unavailable"
         rows.append({"date": date, "threshold_db": thr,
                      "stage09_true_retention": s9tr, "stage09_false_reduction": s9fr,
                      "stage09_precision_after": s9pa, "best_stage12_model": best_model,
@@ -331,10 +338,16 @@ def key_findings(overall, by_thr, model_cmp, fallback, windowability, dates_pres
             "aggregate false_reduction winner", winner,
             "MLP and GRU are close; the aggregate winner leads on mean false reduction")
     if fallback is not None and len(fallback):
-        wins = (fallback["stage12_minus_stage09_false_reduction"] > 0.01).sum()
+        gain = fallback["stage12_minus_stage09_false_reduction"]
+        defined = gain[np.isfinite(gain)]
+        wins = int((defined > 0.01).sum())
+        undef = int(len(gain) - len(defined))
         add("F3", "Stage 12 vs Stage 09 across days", "interpretable_fallback_comparison.csv",
-            "cells where stage12 false_reduction > stage09", f"{wins}/{len(fallback)}",
-            "stage-12 generally removes more false tracks; stage-09 stays interpretable fallback")
+            "cells where stage12 false_reduction > stage09 (of defined cells)",
+            f"{wins}/{len(defined)}" + (f" ({undef} undefined)" if undef else ""),
+            "stage-12 removes more false tracks in every defined cell (mean gain "
+            f"{defined.mean():.3f}); undefined cells have no windowable false tracks. "
+            "Stage-09 stays the interpretable fallback and retains slightly more true tracks")
     if by_thr is not None and len(by_thr):
         core = by_thr[(by_thr["model"] == best_model)
                       & (~by_thr["threshold_db"].isin(HIGH_THRESHOLDS))]

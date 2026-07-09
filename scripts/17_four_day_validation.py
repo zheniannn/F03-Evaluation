@@ -221,6 +221,8 @@ def run_missing(args, availability):
         return [d for d, ok in g.items() if not ok]
 
     def run(cmd, stage, date):
+        # use the running interpreter (this environment has python3, not `python`)
+        cmd = [sys.executable if c == "python" else c for c in cmd]
         print(f"[run-missing:{stage} {date}] " + " ".join(cmd), flush=True)
         try:
             r = subprocess.run(cmd, cwd=REPO_ROOT)
@@ -247,8 +249,13 @@ def run_missing(args, availability):
                   .agg(a=("stage12_mlp_available", "all"),
                        b=("stage12_gru_available", "all")).query("not (a and b)").index]:
             out = os.path.join(args.output_dir, "generated", "stage12", d)
+            # keep the per-day calibration inside the generated tree -- the scorer would
+            # otherwise default to the MAIN stage-12 calibration dir and clobber the
+            # committed 2022-06-06 calibration artifact with this day's band.
+            cal_out = os.path.join(out, "calibration", "sequence_track_calibration.json")
             run(["python", "scripts/12_score_tracks_sequence_prior.py", "--tracks-dir",
                  args.tracks_dir, "--models-dir", args.models_dir, "--report-dir", out,
+                 "--calibration-output", cal_out,
                  "--threshold-db", *thr_str, "--date", d, "--calibration-mode",
                  args.calibration_mode, "--calibration-threshold-db", "3", "6", "9", "12",
                  "--score-threshold", str(args.score_threshold), "--overwrite"], "stage12", d)

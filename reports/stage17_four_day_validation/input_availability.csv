@@ -3,15 +3,15 @@ date,threshold_db,stage08_metrics_available,stage09_metrics_available,stage12_ml
 2022-06-06,0.0,True,True,True,True,True,True,complete,
 2022-06-06,3.0,True,True,True,True,True,True,complete,
 2022-06-06,6.0,True,True,True,True,True,True,complete,
-2022-06-13,-5.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-13,0.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-13,3.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-13,6.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-20,-5.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-20,0.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-20,3.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-20,6.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-27,-5.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-27,0.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-27,3.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
-2022-06-27,6.0,False,False,False,False,False,True,incomplete,missing one or more stage outputs for this cell
+2022-06-13,-5.0,True,True,True,True,True,True,complete,
+2022-06-13,0.0,True,True,True,True,True,True,complete,
+2022-06-13,3.0,True,True,True,True,True,True,complete,
+2022-06-13,6.0,True,True,True,True,True,True,complete,
+2022-06-20,-5.0,True,True,True,True,True,True,complete,
+2022-06-20,0.0,True,True,True,True,True,True,complete,
+2022-06-20,3.0,True,True,True,True,True,True,complete,
+2022-06-20,6.0,True,True,True,True,True,True,complete,
+2022-06-27,-5.0,True,True,True,True,True,True,complete,
+2022-06-27,0.0,True,True,True,True,True,True,complete,
+2022-06-27,3.0,True,True,True,True,True,True,complete,
+2022-06-27,6.0,True,True,True,True,True,True,complete,
