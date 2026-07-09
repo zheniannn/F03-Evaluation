@@ -29,3 +29,7 @@ reports/stage15_diffusion_denoising/diffusion_residual_scores.csv
 reports/stage17_four_day_validation/generated/**/sequence_track_scores.csv
 reports/stage17_four_day_validation/generated/**/physics_track_scores.csv
 reports/stage17_four_day_validation/generated/**/*_track_scores.csv
+
+# stage 09/11 per-track score CSVs (large, regenerable; siblings already ignored)
+reports/stage09_physics_scoring/physics_track_scores.csv
+reports/stage11_adsb_prior_scoring/adsb_prior_track_scores.csv
