@@ -1,0 +1,4 @@
+model,train_windows,val_windows,epochs,best_val_loss,final_train_loss,final_val_loss,device,window_len,stride,features
+mlp_dae,200000,60000,10,0.03278818250894547,0.039319138993024826,0.03278818250894547,cpu,20,5,"dx,dy,dz,vx,vy,vz,speed,vertical_speed,turn_rate"
+gru_ae,200000,60000,10,0.13065645506779353,0.2280902520930767,0.1319579222957293,cpu,20,5,"dx,dy,dz,vx,vy,vz,speed,vertical_speed,turn_rate"
+tcn_ae,200000,60000,10,0.001296598805176715,0.005188112869784236,0.001296598805176715,cpu,20,5,"dx,dy,dz,vx,vy,vz,speed,vertical_speed,turn_rate"

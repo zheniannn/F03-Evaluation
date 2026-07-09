@@ -292,6 +292,54 @@ python scripts/11_score_tracks_adsb_prior.py \
 `--self-test` runs without real data; `--w-*` flags adjust component
 weights (priors dominate; continuity/SNR are weak auxiliaries).
 
+## Stage 12 — Learned sequence-prior track scoring
+
+The first **learned trajectory-shape** stage: trains three denoising
+autoencoders (**mlp_dae**, **gru_ae**, **tcn_ae**, PyTorch) on
+origin/heading-normalized trajectory windows from clean stage-5 relocated
+truth (stage-4 fallback), then scores stage-8 confirmed tracks by
+**reconstruction plausibility** calibrated against holdout-truth errors
+(score 1 at/below the validation p50 error, 0 at/above the p99).
+Compared four-way against stage 8 / stage 9 (hand physics) / stage 11
+(empirical marginal priors). **Not VAE, not diffusion, not the model
+zoo** — stage 13 will implement a VAE trajectory prior over the same
+windows. Truth labels are evaluation-only.
+
+- **Training inputs:** `data/active/radar_truth_relocated/` (preferred) or
+  `data/active/trajectories_10s/`; whole days held out for calibration.
+- **Scoring inputs:** stage-8 tracks (`data/active/tracks_kalman/`, both
+  schemas) + trained models in `models/sequence_priors/`.
+- **Outputs:** model checkpoints (`.pt`, git-ignored) + committed JSON
+  metadata in `models/sequence_priors/`; compact tables, plots, and
+  `sequence_prior_report.md` in `reports/stage12_sequence_priors/`.
+
+```bash
+# Step A: train
+python scripts/12_train_sequence_priors.py \
+  --truth-dir data/active/radar_truth_relocated \
+  --models-dir models/sequence_priors \
+  --report-dir reports/stage12_sequence_priors \
+  --model mlp_dae gru_ae tcn_ae \
+  --window-len 20 --stride 5 --epochs 20 --batch-size 512 \
+  --max-train-windows 500000 --max-val-windows 100000 \
+  --holdout-date 2022-06-27 --overwrite
+
+# Step B: score
+python scripts/12_score_tracks_sequence_prior.py \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/sequence_priors \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage11-dir reports/stage11_adsb_prior_scoring \
+  --report-dir reports/stage12_sequence_priors \
+  --threshold-db -5 0 3 6 9 12 \
+  --date 2022-06-06 --score-threshold 0.5 --overwrite
+```
+
+Both scripts have `--self-test`. Requires PyTorch (the scripts fail with a
+clear message if `torch` is missing). On CPU-only machines, reduce
+`--max-train-windows`/`--epochs` (the committed run used 200k windows x 10
+epochs on CPU; the manifest records the exact settings).
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

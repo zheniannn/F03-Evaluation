@@ -15,3 +15,6 @@ data/active/tracks_scored_physics/*.csv
 !data/active/tracks_scored_physics/.gitkeep
 data/active/trajectories_10s/*.csv
 !data/active/trajectories_10s/.gitkeep
+models/sequence_priors/*.pt
+!models/sequence_priors/.gitkeep
+reports/stage12_sequence_priors/sequence_track_scores.csv

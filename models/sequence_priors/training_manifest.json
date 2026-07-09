@@ -1,0 +1,43 @@
+{
+ "created_by": "Stage 12 training",
+ "data_source": "data/active/radar_truth_relocated",
+ "train_dates": [
+  "2022-06-06",
+  "2022-06-13",
+  "2022-06-20"
+ ],
+ "holdout_dates": [
+  "2022-06-27"
+ ],
+ "models": [
+  "mlp_dae",
+  "gru_ae",
+  "tcn_ae"
+ ],
+ "features": [
+  "dx",
+  "dy",
+  "dz",
+  "vx",
+  "vy",
+  "vz",
+  "speed",
+  "vertical_speed",
+  "turn_rate"
+ ],
+ "window_len": 20,
+ "stride": 5,
+ "seed": 42,
+ "n_train_windows": 200000,
+ "n_val_windows": 60000,
+ "checkpoints": {
+  "mlp_dae": "models/sequence_priors/mlp_dae.pt",
+  "gru_ae": "models/sequence_priors/gru_ae.pt",
+  "tcn_ae": "models/sequence_priors/tcn_ae.pt"
+ },
+ "normalizer": "models/sequence_priors/normalizer.json",
+ "validation_reconstruction": "reports/stage12_sequence_priors/validation_reconstruction.csv",
+ "device": "cpu",
+ "epochs": 10,
+ "max_train_windows": 200000
+}

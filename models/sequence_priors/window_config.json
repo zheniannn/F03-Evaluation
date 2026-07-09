@@ -1,0 +1,15 @@
+{
+ "window_len": 20,
+ "stride": 5,
+ "features": [
+  "dx",
+  "dy",
+  "dz",
+  "vx",
+  "vy",
+  "vz",
+  "speed",
+  "vertical_speed",
+  "turn_rate"
+ ]
+}
