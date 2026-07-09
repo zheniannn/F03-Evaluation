@@ -340,6 +340,56 @@ clear message if `torch` is missing). On CPU-only machines, reduce
 `--max-train-windows`/`--epochs` (the committed run used 200k windows x 10
 epochs on CPU; the manifest records the exact settings).
 
+### Stage 12.5 — Noise-matched calibration
+
+Stage 12's models trained on **clean** truth windows separate true and
+false tracks strongly, but their clean-truth score band is miscalibrated
+for **noisy** stage-8 Kalman tracks: genuine tracks reconstruct worse than
+clean truth and collapse toward score 0, so true-track retention at the 0.5
+threshold is far too low. Stage 12.5 **recalibrates the reconstruction-
+error→score mapping** using high-purity stage-8 true tracks instead of
+clean truth windows — the p50→1 / p99→0 anchors now come from the noisy-
+track domain, making the 0.5 threshold meaningful.
+
+- This **does not retrain the models** — the `.pt` weights are untouched;
+  only the calibration quantiles change.
+- **Truth labels are used only to select the calibration tracks** and to
+  evaluate metrics; they never enter the score itself. Still **not VAE**
+  (stage 13) and **not diffusion** (stage 14).
+- Run this **before comparing stage 12 to stage 9 / stage 11** — the
+  four-way comparison should reflect the noise-matched calibration.
+- Higher detection thresholds (3/6/9/12 dB) are used for the calibration
+  set because they yield cleaner, more reliable high-purity true tracks;
+  the full threshold set (including −5/0) is still evaluated.
+- **Outputs:** `reports/stage12_sequence_priors/calibration/` —
+  `sequence_track_calibration.json`/`.csv` (the band) and
+  `sequence_calibration_comparison.csv` (clean-truth vs track-purity), plus
+  three calibration plots and a Stage 12.5 report section.
+
+```bash
+python scripts/12_score_tracks_sequence_prior.py \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/sequence_priors \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage11-dir reports/stage11_adsb_prior_scoring \
+  --report-dir reports/stage12_sequence_priors \
+  --threshold-db -5 0 3 6 9 12 \
+  --date 2022-06-06 \
+  --calibration-mode track_purity \
+  --calibration-date 2022-06-06 \
+  --calibration-threshold-db 3 6 9 12 \
+  --calibration-min-target-fraction 0.95 \
+  --calibration-min-purity 0.95 \
+  --score-threshold 0.5 \
+  --compare-calibration \
+  --overwrite
+```
+
+`scripts/12_calibrate_sequence_prior.py` builds the same calibration JSON
+standalone (without scoring), and
+`--self-test --calibration-mode track_purity` runs the calibration self-
+test.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

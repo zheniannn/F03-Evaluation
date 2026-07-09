@@ -1,0 +1,55 @@
+{
+  "calibration_mode": "track_purity",
+  "calibration_dates": [
+    "2022-06-06"
+  ],
+  "calibration_thresholds": [
+    3.0,
+    6.0,
+    9.0,
+    12.0
+  ],
+  "min_target_fraction": 0.95,
+  "min_purity": 0.95,
+  "models": {
+    "mlp_dae": {
+      "error_p10": 0.09134641140699387,
+      "error_p25": 0.1310500092804432,
+      "error_p50": 0.19461127370595932,
+      "error_p75": 0.3036685585975647,
+      "error_p90": 0.517200767993927,
+      "error_p95": 0.7838727474212636,
+      "error_p99": 2.147204813957188,
+      "error_mean": 0.36266600786139963,
+      "error_std": 3.3481282230219263,
+      "n_calibration_windows": 652982,
+      "n_calibration_tracks": 20254
+    },
+    "gru_ae": {
+      "error_p10": 0.17406293898820877,
+      "error_p25": 0.25943736732006073,
+      "error_p50": 0.39256496727466583,
+      "error_p75": 0.6025674939155579,
+      "error_p90": 0.956729501485825,
+      "error_p95": 1.3786416351795185,
+      "error_p99": 3.8963302016257764,
+      "error_mean": 0.6621609316308747,
+      "error_std": 4.960999360498594,
+      "n_calibration_windows": 652982,
+      "n_calibration_tracks": 20254
+    },
+    "tcn_ae": {
+      "error_p10": 0.012220682296901942,
+      "error_p25": 0.017448977567255497,
+      "error_p50": 0.026521705090999603,
+      "error_p75": 0.04281722288578749,
+      "error_p90": 0.0706187479197979,
+      "error_p95": 0.09847113192081448,
+      "error_p99": 0.216419088393447,
+      "error_mean": 0.039523786877857084,
+      "error_std": 0.10358819310363712,
+      "n_calibration_windows": 652982,
+      "n_calibration_tracks": 20254
+    }
+  }
+}

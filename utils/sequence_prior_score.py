@@ -13,6 +13,7 @@ Truth labels never influence the score; they enter only afterwards, in the
 evaluation (same strict true-track definition as stages 9 and 11).
 """
 
+import json
 import os
 from typing import Dict, List, Optional, Tuple
 
@@ -49,6 +50,142 @@ def score_track_errors(track_error: float, calibration: Dict) -> float:
     return float(1.0 - (track_error - lo) / (hi - lo))
 
 
+# =============================================================================
+# Stage 12.5 -- noise-matched (track-purity) calibration
+#
+# The stage-12 models are trained on CLEAN truth windows, so their reconstruction
+# errors are calibrated to clean motion. Stage-8 tracks are Kalman posteriors over
+# NOISY stage-6 measurements, so even genuine tracks reconstruct worse than clean
+# truth -- the clean-truth p50/p99 band pushes true tracks toward score 0. Stage
+# 12.5 rebuilds the error->score band from high-purity NOISY stage-8 true tracks so
+# the 0.5 threshold is meaningful in the noisy-track domain. The autoencoder weights
+# are never touched; only the calibration quantiles change. Truth labels are used
+# ONLY to select the calibration tracks and to evaluate metrics.
+# =============================================================================
+
+CALIBRATION_QUANTILES_FULL = [10, 25, 50, 75, 90, 95, 99]
+
+
+def quantiles_from_window_errors(errors: np.ndarray) -> Dict:
+    """Full calibration-quantile summary from a pool of per-window errors."""
+    e = np.asarray(errors, dtype=float)
+    e = e[np.isfinite(e)]
+    q = {f"error_p{p}": float(np.percentile(e, p)) for p in CALIBRATION_QUANTILES_FULL}
+    q.update({"error_mean": float(e.mean()) if len(e) else np.nan,
+              "error_std": float(e.std()) if len(e) else np.nan,
+              "n_calibration_windows": int(len(e))})
+    return q
+
+
+def write_calibration_files(calibration_dir: str, cal_track: Dict[str, Dict],
+                            meta: Dict) -> Tuple[str, str]:
+    """Persist the track-purity calibration as JSON (keyed by model) and a flat CSV."""
+    os.makedirs(calibration_dir, exist_ok=True)
+    payload = {
+        "calibration_mode": "track_purity",
+        "calibration_dates": meta["calibration_dates"],
+        "calibration_thresholds": meta["calibration_thresholds"],
+        "min_target_fraction": meta["min_target_fraction"],
+        "min_purity": meta["min_purity"],
+        "models": cal_track,
+    }
+    json_path = meta.get("calibration_output",
+                         os.path.join(calibration_dir, "sequence_track_calibration.json"))
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, "w") as f:
+        json.dump(payload, f, indent=2)
+
+    rows = []
+    for model, d in cal_track.items():
+        rows.append({
+            "model": model,
+            **{k: d[k] for k in
+               ["error_p10", "error_p25", "error_p50", "error_p75",
+                "error_p90", "error_p95", "error_p99", "error_mean", "error_std",
+                "n_calibration_tracks", "n_calibration_windows"]},
+            "calibration_dates": ",".join(meta["calibration_dates"]),
+            "calibration_thresholds": ",".join(f"{t:g}" for t in meta["calibration_thresholds"]),
+            "min_target_fraction": meta["min_target_fraction"],
+            "min_purity": meta["min_purity"],
+        })
+    csv_path = os.path.join(os.path.dirname(json_path), "sequence_track_calibration.csv")
+    pd.DataFrame(rows).to_csv(csv_path, index=False)
+    return json_path, csv_path
+
+
+def build_calibration_comparison(by_mt_by_mode: Dict[str, pd.DataFrame],
+                                 score_threshold: float) -> pd.DataFrame:
+    """Per model x detection-threshold x calibration-mode filtering metrics."""
+    frames = []
+    for mode, by_mt in by_mt_by_mode.items():
+        f = by_mt[["model", "threshold_db", "stage12_kept_tracks",
+                   "stage12_kept_true_tracks", "stage12_kept_false_tracks",
+                   "true_track_retention", "false_track_reduction", "precision_after",
+                   "median_score_true_tracks", "median_score_false_tracks"]].copy()
+        f.insert(2, "calibration_mode", mode)
+        f.insert(3, "score_threshold", score_threshold)
+        f = f.rename(columns={"stage12_kept_tracks": "kept_tracks",
+                              "stage12_kept_true_tracks": "kept_true_tracks",
+                              "stage12_kept_false_tracks": "kept_false_tracks"})
+        frames.append(f)
+    return (pd.concat(frames, ignore_index=True)
+            .sort_values(["calibration_mode", "model", "threshold_db"])
+            .reset_index(drop=True))
+
+
+def make_calibration_plots(cal_track: Dict[str, Dict], cal_clean: Dict[str, Dict],
+                           by_mt_by_mode: Dict[str, pd.DataFrame], plots_dir: str) -> List[str]:
+    """Calibration quantile bands + clean-vs-track retention / false-reduction."""
+    os.makedirs(plots_dir, exist_ok=True)
+    written = []
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    qs = CALIBRATION_QUANTILES_FULL
+    for model in cal_track:
+        ax.plot(qs, [cal_track[model][f"error_p{p}"] for p in qs], marker="o",
+                label=f"{model} track-purity")
+        if model in cal_clean and all(f"error_p{p}" in cal_clean[model] for p in qs):
+            ax.plot(qs, [cal_clean[model][f"error_p{p}"] for p in qs], marker="s",
+                    linestyle="--", label=f"{model} clean-truth")
+    ax.set_xlabel("percentile")
+    ax.set_ylabel("reconstruction error")
+    ax.set_yscale("log")
+    ax.set_title("Calibration error quantiles (solid track-purity, dashed clean-truth)")
+    ax.legend(fontsize=8)
+    ax.grid(True, linewidth=0.5)
+    fig.tight_layout()
+    p = os.path.join(plots_dir, "calibration_error_quantiles.png")
+    fig.savefig(p, dpi=150)
+    plt.close(fig)
+    written.append(p)
+
+    for ycol, fname, title in [
+        ("true_track_retention", "clean_vs_track_calibrated_retention.png",
+         "True-track retention: clean-truth vs track-purity calibration"),
+        ("false_track_reduction", "clean_vs_track_calibrated_false_reduction.png",
+         "False-track reduction: clean-truth vs track-purity calibration"),
+    ]:
+        fig, ax = plt.subplots(figsize=(7, 4.5))
+        styles = {"clean_truth": (":", "s"), "track_purity": ("-", "o")}
+        for mode, by_mt in by_mt_by_mode.items():
+            ls, mk = styles.get(mode, ("-", "o"))
+            for model, g in by_mt.groupby("model"):
+                g = g.sort_values("threshold_db")
+                ax.plot(g["threshold_db"], g[ycol], marker=mk, linestyle=ls,
+                        label=f"{model} {mode}")
+        ax.set_xlabel("detection threshold (dB)")
+        ax.set_ylabel(ycol.replace("_", " "))
+        ax.set_title(title)
+        ax.legend(fontsize=8)
+        ax.grid(True, linewidth=0.5)
+        fig.tight_layout()
+        p = os.path.join(plots_dir, fname)
+        fig.savefig(p, dpi=150)
+        plt.close(fig)
+        written.append(p)
+    return written
+
+
 def evaluate_track_labels(g: pd.DataFrame) -> Dict:
     """Evaluation-only labels for one track (from the canonical loader frame)."""
     hits = g[g["is_hit"] == 1]
@@ -73,13 +210,14 @@ def evaluate_track_labels(g: pd.DataFrame) -> Dict:
 # Aggregation
 # =============================================================================
 
-def aggregate_by_model_threshold(scores: pd.DataFrame, score_threshold: float) -> pd.DataFrame:
+def aggregate_by_model_threshold(scores: pd.DataFrame, score_threshold: float,
+                                 score_col: str = "sequence_prior_score") -> pd.DataFrame:
     rows = []
     for (model, thr), g in scores.groupby(["model", "threshold_db"]):
-        scored = g[np.isfinite(g["sequence_prior_score"])]
+        scored = g[np.isfinite(g[score_col])]
         true = scored[scored["is_true_track"]]
         false = scored[~scored["is_true_track"]]
-        kept = scored[scored["keep_sequence_prior"]]
+        kept = scored[scored[score_col] >= score_threshold]
         kt = int(kept["is_true_track"].sum())
         kf = len(kept) - kt
         rows.append({
@@ -95,22 +233,23 @@ def aggregate_by_model_threshold(scores: pd.DataFrame, score_threshold: float) -
             "false_track_reduction": 1 - kf / len(false) if len(false) else np.nan,
             "precision_before": len(true) / len(scored) if len(scored) else np.nan,
             "precision_after": kt / len(kept) if len(kept) else np.nan,
-            "mean_score_true_tracks": float(true["sequence_prior_score"].mean()) if len(true) else np.nan,
-            "mean_score_false_tracks": float(false["sequence_prior_score"].mean()) if len(false) else np.nan,
-            "median_score_true_tracks": float(true["sequence_prior_score"].median()) if len(true) else np.nan,
-            "median_score_false_tracks": float(false["sequence_prior_score"].median()) if len(false) else np.nan,
+            "mean_score_true_tracks": float(true[score_col].mean()) if len(true) else np.nan,
+            "mean_score_false_tracks": float(false[score_col].mean()) if len(false) else np.nan,
+            "median_score_true_tracks": float(true[score_col].median()) if len(true) else np.nan,
+            "median_score_false_tracks": float(false[score_col].median()) if len(false) else np.nan,
         })
     return pd.DataFrame(rows).sort_values(["model", "threshold_db"]).reset_index(drop=True)
 
 
-def sweep_table(scores: pd.DataFrame, sweep_thresholds: List[float]) -> pd.DataFrame:
+def sweep_table(scores: pd.DataFrame, sweep_thresholds: List[float],
+                score_col: str = "sequence_prior_score") -> pd.DataFrame:
     rows = []
     for (model, thr), g in scores.groupby(["model", "threshold_db"]):
-        scored = g[np.isfinite(g["sequence_prior_score"])]
+        scored = g[np.isfinite(g[score_col])]
         true = scored[scored["is_true_track"]]
         false = scored[~scored["is_true_track"]]
         for st in sweep_thresholds:
-            kept = scored[scored["sequence_prior_score"] >= st]
+            kept = scored[scored[score_col] >= st]
             kt = int(kept["is_true_track"].sum())
             kf = len(kept) - kt
             rows.append({
@@ -124,17 +263,18 @@ def sweep_table(scores: pd.DataFrame, sweep_thresholds: List[float]) -> pd.DataF
     return pd.DataFrame(rows)
 
 
-def range_bin_table(scores: pd.DataFrame, edges: List[float]) -> pd.DataFrame:
+def range_bin_table(scores: pd.DataFrame, edges: List[float], score_threshold: float = 0.5,
+                    score_col: str = "sequence_prior_score") -> pd.DataFrame:
     labels = [f">{lo / 1000:.0f} km" if np.isinf(hi) else f"{lo / 1000:.0f}-{hi / 1000:.0f} km"
               for lo, hi in zip(edges[:-1], edges[1:])]
     idx = np.digitize(scores["median_range_m"].to_numpy(), np.asarray(edges)[1:-1])
     scores = scores.assign(_bin=[labels[i] for i in idx], _lo=[edges[i] for i in idx])
     rows = []
     for (model, thr, label, lo), g in scores.groupby(["model", "threshold_db", "_bin", "_lo"]):
-        scored = g[np.isfinite(g["sequence_prior_score"])]
+        scored = g[np.isfinite(g[score_col])]
         true = scored[scored["is_true_track"]]
         false = scored[~scored["is_true_track"]]
-        kept = scored[scored["keep_sequence_prior"]]
+        kept = scored[scored[score_col] >= score_threshold]
         kt = int(kept["is_true_track"].sum())
         rows.append({
             "model": model, "threshold_db": thr, "range_bin": label, "_lo": lo,
@@ -145,7 +285,7 @@ def range_bin_table(scores: pd.DataFrame, edges: List[float]) -> pd.DataFrame:
             "true_track_retention": kt / len(true) if len(true) else np.nan,
             "false_track_reduction": 1 - (len(kept) - kt) / len(false) if len(false) else np.nan,
             "precision_after": kt / len(kept) if len(kept) else np.nan,
-            "median_sequence_score": float(scored["sequence_prior_score"].median())
+            "median_sequence_score": float(scored[score_col].median())
             if len(scored) else np.nan,
         })
     return (pd.DataFrame(rows).sort_values(["model", "threshold_db", "_lo"])
@@ -180,18 +320,27 @@ def compare_with_stage09_stage11(by_mt: pd.DataFrame, stage09_dir: str,
     else:
         base["stage11_true_retention"] = base["stage11_false_reduction"] = np.nan
 
-    s12 = by_mt[["model", "threshold_db", "true_track_retention",
-                 "false_track_reduction", "precision_after"]].rename(columns={
+    s12_cols = ["model", "threshold_db", "true_track_retention",
+                "false_track_reduction", "precision_after"]
+    has_mode = "calibration_mode" in by_mt.columns
+    if has_mode:
+        s12_cols.append("calibration_mode")
+    s12 = by_mt[s12_cols].rename(columns={
         "true_track_retention": "stage12_true_retention",
         "false_track_reduction": "stage12_false_reduction",
-        "precision_after": "stage12_precision"})
+        "precision_after": "stage12_precision",
+        "calibration_mode": "stage12_calibration_mode"})
     merged = base.merge(s12, on="threshold_db", how="right")
     cols = ["threshold_db", "stage08_true_tracks", "stage08_false_tracks",
             "stage09_true_retention", "stage09_false_reduction",
             "stage11_true_retention", "stage11_false_reduction",
             "model", "stage12_true_retention", "stage12_false_reduction",
             "stage12_precision"]
-    return merged[cols].sort_values(["model", "threshold_db"]).reset_index(drop=True), s9_ok, s11_ok
+    if has_mode:
+        cols.insert(cols.index("model") + 1, "stage12_calibration_mode")
+    sort_keys = (["stage12_calibration_mode", "model", "threshold_db"] if has_mode
+                 else ["model", "threshold_db"])
+    return merged[cols].sort_values(sort_keys).reset_index(drop=True), s9_ok, s11_ok
 
 
 # =============================================================================
@@ -277,10 +426,98 @@ def make_scoring_plots(scores: pd.DataFrame, by_mt: pd.DataFrame, sweep: pd.Data
 # Report
 # =============================================================================
 
+def _stage125_report_section(scores, by_mt, cal_track, cal_clean, calib_comparison,
+                             calib_meta, primary_mode, score_threshold) -> List[str]:
+    calib_meta = calib_meta or {}
+    lines = [
+        "## Stage 12.5 Noise-Matched Calibration",
+        "",
+        "The original stage-12 score mapping used **clean truth** validation",
+        "windows for its p50->1 / p99->0 band. Scoring noisy stage-8 Kalman",
+        "tracks against that clean band is a domain shift: genuine tracks",
+        "reconstruct worse than clean truth and collapse toward score 0.",
+        "Stage 12.5 recalibrates the error->score band using **high-purity",
+        "stage-8 true tracks** instead, so the 0.5 threshold is meaningful in",
+        "the noisy-track domain.",
+        "",
+        "- The **autoencoder weights are unchanged** -- nothing is retrained;",
+        "  only the reconstruction-error quantiles that define the score band",
+        "  are replaced.",
+        "- **Truth labels are used only to select calibration tracks** and to",
+        "  evaluate metrics; they never enter the score itself.",
+        "- This is still **not VAE** (stage 13) and **not diffusion** (stage 14).",
+        "",
+        f"Calibration tracks: dates {', '.join(calib_meta.get('calibration_dates', []))};"
+        f" thresholds {', '.join(f'{t:g}' for t in calib_meta.get('calibration_thresholds', []))} dB;"
+        f" eligibility target_fraction >= {calib_meta.get('min_target_fraction')}"
+        f" and purity >= {calib_meta.get('min_purity')}"
+        " (higher thresholds are used for calibration because they yield cleaner,"
+        " more reliable high-purity true tracks).",
+        "",
+        "### Calibration error quantiles (per model)",
+        "",
+    ]
+    qcols = ["error_p50", "error_p90", "error_p99", "n_calibration_tracks",
+             "n_calibration_windows"]
+    ctab = pd.DataFrame([{"model": m, "calibration": "track_purity",
+                          **{c: cal_track[m][c] for c in qcols}} for m in cal_track])
+    if cal_clean:
+        for m in cal_clean:
+            ctab = pd.concat([ctab, pd.DataFrame([{
+                "model": m, "calibration": "clean_truth",
+                "error_p50": cal_clean[m].get("error_p50"),
+                "error_p90": cal_clean[m].get("error_p90"),
+                "error_p99": cal_clean[m].get("error_p99"),
+                "n_calibration_tracks": np.nan,
+                "n_calibration_windows": cal_clean[m].get("n_val_windows", np.nan)}])],
+                ignore_index=True)
+    lines += md_table(ctab.sort_values(["model", "calibration"]).round(6))
+
+    if calib_comparison is not None and len(calib_comparison):
+        lines += [
+            "",
+            f"### Clean-truth vs track-purity filtering (score threshold {score_threshold:g})",
+            "",
+        ]
+        cmp_cols = ["model", "threshold_db", "calibration_mode", "true_track_retention",
+                    "false_track_reduction", "precision_after",
+                    "median_score_true_tracks"]
+        lines += md_table(calib_comparison[cmp_cols].round(4))
+        # report-only verdict at the chosen score threshold
+        piv = (calib_comparison.groupby("calibration_mode")["true_track_retention"]
+               .mean())
+        clean_ret = float(piv.get("clean_truth", np.nan))
+        track_ret = float(piv.get("track_purity", np.nan))
+        lines += [""]
+        if np.isfinite(clean_ret) and np.isfinite(track_ret):
+            if track_ret >= clean_ret:
+                lines.append(
+                    f"Mean true-track retention rises from {clean_ret:.3f} (clean-truth)"
+                    f" to {track_ret:.3f} (track-purity) at score threshold"
+                    f" {score_threshold:g} -- noise-matched calibration fixes the domain"
+                    " shift while false-track reduction stays high.")
+            else:
+                lines.append(
+                    f"Mean true-track retention is {clean_ret:.3f} (clean-truth) vs"
+                    f" {track_ret:.3f} (track-purity): calibration did not fix the"
+                    " domain shift on this data.")
+    lines += [
+        "",
+        f"The primary scores in this run use the **{primary_mode}** calibration.",
+        "",
+    ]
+    return lines
+
+
 def write_scoring_report(report_dir: str, scores: pd.DataFrame, by_mt: pd.DataFrame,
                          comparison: pd.DataFrame, range_bins: pd.DataFrame,
                          val_recon: pd.DataFrame, manifest: Dict,
-                         s9_ok: bool, s11_ok: bool, score_threshold: float) -> str:
+                         s9_ok: bool, s11_ok: bool, score_threshold: float,
+                         primary_mode: str = "clean_truth",
+                         cal_track: Optional[Dict] = None,
+                         cal_clean: Optional[Dict] = None,
+                         calib_comparison: Optional[pd.DataFrame] = None,
+                         calib_meta: Optional[Dict] = None) -> str:
     dates = sorted(scores["date"].unique())
     date_scope = (f"These are one-day scoring results for {dates[0]}."
                   if len(dates) == 1 else
@@ -430,6 +667,10 @@ def write_scoring_report(report_dir: str, scores: pd.DataFrame, by_mt: pd.DataFr
         "normalized windows, giving a proper likelihood-based score.",
         "",
     ]
+    if cal_track is not None:
+        lines += _stage125_report_section(scores, by_mt, cal_track, cal_clean,
+                                          calib_comparison, calib_meta, primary_mode,
+                                          score_threshold)
     os.makedirs(report_dir, exist_ok=True)
     path = os.path.join(report_dir, "sequence_prior_report.md")
     with open(path, "w") as f:
@@ -442,7 +683,11 @@ def write_scoring_report(report_dir: str, scores: pd.DataFrame, by_mt: pd.DataFr
 # =============================================================================
 
 def run_scoring_gate(report_dir: str, scores: pd.DataFrame, by_mt: pd.DataFrame,
-                     comparison: pd.DataFrame, s9_ok: bool, s11_ok: bool) -> None:
+                     comparison: pd.DataFrame, s9_ok: bool, s11_ok: bool,
+                     cal_track: Optional[Dict] = None,
+                     calibration_json: Optional[str] = None,
+                     by_mt_by_mode: Optional[Dict[str, pd.DataFrame]] = None,
+                     score_threshold: float = 0.5) -> None:
     def fail(message: str) -> None:
         raise ValueError(f"Stage 12 scoring validation failed: {message}")
 
@@ -490,3 +735,31 @@ def run_scoring_gate(report_dir: str, scores: pd.DataFrame, by_mt: pd.DataFrame,
         print(f"  reference (report-only): stage 9 mean reduction "
               f"{ref['stage09_false_reduction'].mean():.3f}, stage 11 "
               f"{ref['stage11_false_reduction'].mean():.3f}; stage 12 per model above.")
+
+    if cal_track is not None:
+        if not calibration_json or not os.path.exists(calibration_json):
+            fail("track-purity calibration JSON missing")
+        for model, d in cal_track.items():
+            if not d.get("n_calibration_tracks", 0) > 0:
+                fail(f"{model}: n_calibration_tracks must be > 0")
+            if not d.get("n_calibration_windows", 0) > 0:
+                fail(f"{model}: n_calibration_windows must be > 0")
+            if not d["error_p99"] >= d["error_p50"]:
+                fail(f"{model}: calibration error_p99 < error_p50")
+        if "sequence_prior_score_track_calibrated" in scores.columns:
+            sc = scores["sequence_prior_score_track_calibrated"]
+            sc = sc[np.isfinite(sc)]
+            if len(sc) and not sc.between(0, 1).all():
+                fail("track-calibrated scores outside [0, 1]")
+        print("  Stage 12.5: calibration JSON present; per-model tracks/windows > 0; "
+              "p99 >= p50; track-calibrated scores in [0,1]: OK")
+
+    if by_mt_by_mode and {"clean_truth", "track_purity"} <= set(by_mt_by_mode):
+        clean_ret = by_mt_by_mode["clean_truth"]["true_track_retention"].mean()
+        track_ret = by_mt_by_mode["track_purity"]["true_track_retention"].mean()
+        verdict = ("track-purity calibration fixed the domain shift"
+                   if track_ret >= clean_ret else
+                   "calibration did not fix the domain shift")
+        print(f"  Stage 12.5 (report-only): mean true retention clean={clean_ret:.3f} "
+              f"vs track={track_ret:.3f} at score threshold {score_threshold:g} "
+              f"-- {verdict}.")

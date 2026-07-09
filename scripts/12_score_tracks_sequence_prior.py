@@ -37,20 +37,24 @@ from utils.sequence_windows import (
 )
 from utils.sequence_prior_score import (
     aggregate_by_model_threshold,
+    build_calibration_comparison,
     compare_with_stage09_stage11,
     evaluate_track_labels,
+    make_calibration_plots,
     make_scoring_plots,
     range_bin_table,
     run_scoring_gate,
     score_track_errors,
     sweep_table,
+    write_calibration_files,
     write_scoring_report,
 )
 
 SCORE_CSV_COLUMNS = [
     "date", "threshold_db", "model", "track_id",
     "n_hits", "n_misses", "duration_s", "median_range_m", "max_range_m", "n_windows",
-    "sequence_prior_score", "keep_sequence_prior",
+    "sequence_prior_score", "keep_sequence_prior", "calibration_mode",
+    "sequence_prior_score_clean_truth", "sequence_prior_score_track_calibrated",
     "sequence_recon_error_mean", "sequence_recon_error_median",
     "sequence_recon_error_p90", "sequence_recon_error_max",
     "calibration_error_p50", "calibration_error_p99",
@@ -93,19 +97,44 @@ def parse_args():
     parser.add_argument("--no-plots", action="store_true")
     parser.add_argument("--self-test", action="store_true",
                         help="Run a tiny synthetic end-to-end check (no real data needed) and exit.")
+
+    # --- Stage 12.5: noise-matched (track-purity) calibration -------------
+    parser.add_argument("--calibration-mode", choices=["clean_truth", "track_purity"],
+                        default="clean_truth",
+                        help="clean_truth (stage-12 default) or track_purity (stage 12.5).")
+    parser.add_argument("--calibration-tracks-dir", type=str,
+                        default=os.path.join(REPO_ROOT, "data", "active", "tracks_kalman"),
+                        help="Stage-8 tracks used to build the track-purity calibration set.")
+    parser.add_argument("--calibration-date", type=str, nargs="*", default=None,
+                        help="Dates for calibration tracks (default: --date).")
+    parser.add_argument("--calibration-threshold-db", type=float, nargs="+", default=None,
+                        help="Thresholds for calibration tracks (default: --threshold-db).")
+    parser.add_argument("--calibration-min-target-fraction", type=float, default=0.95)
+    parser.add_argument("--calibration-min-purity", type=float, default=0.95)
+    parser.add_argument("--calibration-max-false-tracks", type=int, default=0,
+                        help="Sanity guard: calibration tracks should be true tracks only.")
+    parser.add_argument("--calibration-output", type=str,
+                        default=os.path.join(REPO_ROOT, "reports", "stage12_sequence_priors",
+                                             "calibration", "sequence_track_calibration.json"))
+    parser.add_argument("--compare-calibration", action="store_true",
+                        help="Score under both clean-truth and track-purity calibrations.")
     return parser.parse_args()
 
 
-def score_one_run(date, threshold_db, path, models, calibrations, normalizer,
-                  wcfg, args, device):
-    """Score every confirmed track of one stage-8 run under every model."""
+def _compute_run_errors(date, threshold_db, path, models, normalizer, wcfg, args, device):
+    """Per-window reconstruction errors for one stage-8 run.
+
+    Returns (basics, errors_by_model_gid) where basics maps track id -> per-track
+    basic/evaluation fields and errors_by_model_gid maps model -> {track id -> per-
+    window error array}. Truth labels sit in basics for later use; they never touch
+    the reconstruction errors themselves.
+    """
     from utils.sequence_models import reconstruction_errors
 
     df = load_tracks_for_windows(path, date, threshold_db, args.detections_dir)
     confirmed = df.loc[df["confirmed"] == 1, "group_id"].unique()
     df = df[df["group_id"].isin(confirmed)]
 
-    # per-track basic + evaluation-only fields
     t_all = df["timestamp"].to_numpy(dtype=float)
     basics = {}
     for gid, pos in df.groupby("group_id", sort=False).indices.items():
@@ -123,47 +152,131 @@ def score_one_run(date, threshold_db, path, models, calibrations, normalizer,
     df = df[df["group_id"].isin(basics)]
 
     windows, gids = build_windows_by_group(df, "group_id", wcfg, return_group_index=True)
-    rows = []
+    errors_by_model_gid = {m: {} for m in args.model}
     if len(windows):
         normed = apply_normalizer(windows, normalizer)
         gid_arr = np.asarray(gids, dtype=object)
-    for model_name in args.model:
-        errors_by_gid = {}
-        if len(windows):
+        for model_name in args.model:
             errors = reconstruction_errors(models[model_name], normed, args.batch_size, device)
-            order = pd.Series(errors).groupby(gid_arr)
-            for gid, errs in order:
-                errors_by_gid[gid] = errs.to_numpy()
-        cal = calibrations[model_name]
+            for gid, errs in pd.Series(errors).groupby(gid_arr):
+                errors_by_model_gid[model_name][gid] = errs.to_numpy()
+    return basics, errors_by_model_gid
+
+
+def score_one_run(date, threshold_db, path, models, cal_by_mode, primary_mode,
+                  compare, normalizer, wcfg, args, device):
+    """Score every confirmed track of one stage-8 run under every model + calibration."""
+    basics, errors_by_model_gid = _compute_run_errors(
+        date, threshold_db, path, models, normalizer, wcfg, args, device)
+
+    rows = []
+    for model_name in args.model:
+        errors_by_gid = errors_by_model_gid[model_name]
         for gid, b in basics.items():
             errs = errors_by_gid.get(gid)
             if errs is None or not len(errs):
-                score = np.nan
                 stats = dict(mean=np.nan, median=np.nan, p90=np.nan, mx=np.nan, n=0)
+                score_by_mode = {m: np.nan for m in cal_by_mode}
             else:
                 stats = dict(mean=float(errs.mean()), median=float(np.median(errs)),
                              p90=float(np.percentile(errs, 90)), mx=float(errs.max()),
                              n=len(errs))
-                score = score_track_errors(stats["median"], cal)
-            rows.append({
+                score_by_mode = {m: score_track_errors(stats["median"], cal[model_name])
+                                 for m, cal in cal_by_mode.items()}
+            primary = score_by_mode[primary_mode]
+            cal_primary = cal_by_mode[primary_mode][model_name]
+            row = {
                 "date": date, "threshold_db": threshold_db, "model": model_name,
                 "track_id": gid, **{k: b[k] for k in
                                     ("n_hits", "n_misses", "duration_s",
                                      "median_range_m", "max_range_m")},
                 "n_windows": stats["n"],
-                "sequence_prior_score": score,
-                "keep_sequence_prior": bool(np.isfinite(score) and score >= args.score_threshold),
+                "sequence_prior_score": primary,
+                "keep_sequence_prior": bool(np.isfinite(primary)
+                                            and primary >= args.score_threshold),
+                "calibration_mode": primary_mode,
                 "sequence_recon_error_mean": stats["mean"],
                 "sequence_recon_error_median": stats["median"],
                 "sequence_recon_error_p90": stats["p90"],
                 "sequence_recon_error_max": stats["mx"],
-                "calibration_error_p50": cal["error_p50"],
-                "calibration_error_p99": cal["error_p99"],
+                "calibration_error_p50": cal_primary["error_p50"],
+                "calibration_error_p99": cal_primary["error_p99"],
                 **{k: b[k] for k in ("n_target_hits", "n_clutter_hits", "target_fraction",
                                      "purity", "majority_trajectory_id", "is_true_track",
                                      "position_rmse_m")},
-            })
+            }
+            if compare:
+                row["sequence_prior_score_clean_truth"] = score_by_mode.get(
+                    "clean_truth", np.nan)
+                row["sequence_prior_score_track_calibrated"] = score_by_mode.get(
+                    "track_purity", np.nan)
+            rows.append(row)
     return pd.DataFrame(rows)
+
+
+def build_track_purity_calibration(models, normalizer, wcfg, args, device):
+    """Build noise-matched calibration quantiles from high-purity stage-8 true tracks."""
+    cal_dates = args.calibration_date if args.calibration_date else args.date
+    cal_thr = (args.calibration_threshold_db if args.calibration_threshold_db is not None
+               else args.threshold_db)
+    runs = discover_track_files(args.calibration_tracks_dir)
+    if cal_thr is not None:
+        runs = [r for r in runs if any(abs(r[1] - t) < 1e-9 for t in cal_thr)]
+    if cal_dates:
+        runs = [r for r in runs if r[0] in cal_dates]
+    if not runs:
+        raise SystemExit(
+            f"No calibration track files found in {args.calibration_tracks_dir} "
+            f"for dates={cal_dates} thresholds={cal_thr}")
+
+    from utils.sequence_prior_score import quantiles_from_window_errors
+
+    pooled = {m: [] for m in args.model}
+    n_tracks = 0
+    n_false = 0
+    for date, thr, path in runs:
+        print(f"[calib {date} thr={thr:g}dB] {os.path.basename(path)} ...", flush=True)
+        basics, errors_by_model_gid = _compute_run_errors(
+            date, thr, path, models, normalizer, wcfg, args, device)
+        eligible = [gid for gid, b in basics.items()
+                    if np.isfinite(b["target_fraction"])
+                    and b["target_fraction"] >= args.calibration_min_target_fraction
+                    and np.isfinite(b["purity"])
+                    and b["purity"] >= args.calibration_min_purity
+                    and b["is_true_track"]]
+        n_false += sum(1 for gid in eligible if not basics[gid]["is_true_track"])
+        for gid in eligible:
+            if any(len(errors_by_model_gid[m].get(gid, [])) for m in args.model):
+                n_tracks += 1
+        for m in args.model:
+            for gid in eligible:
+                errs = errors_by_model_gid[m].get(gid)
+                if errs is not None and len(errs) and np.all(np.isfinite(errs)):
+                    pooled[m].append(errs)
+
+    if n_false > args.calibration_max_false_tracks:
+        raise SystemExit(
+            f"Calibration selected {n_false} false tracks (> "
+            f"--calibration-max-false-tracks {args.calibration_max_false_tracks})")
+
+    cal_track = {}
+    per_model_tracks = n_tracks // max(len(args.model), 1)
+    for m in args.model:
+        if not pooled[m]:
+            raise SystemExit(f"No calibration windows collected for model {m}")
+        errs = np.concatenate(pooled[m])
+        q = quantiles_from_window_errors(errs)
+        q["n_calibration_tracks"] = per_model_tracks
+        cal_track[m] = q
+
+    meta = {
+        "calibration_dates": sorted({r[0] for r in runs}),
+        "calibration_thresholds": sorted({r[1] for r in runs}),
+        "min_target_fraction": args.calibration_min_target_fraction,
+        "min_purity": args.calibration_min_purity,
+        "calibration_output": args.calibration_output,
+    }
+    return cal_track, meta
 
 
 def run_scoring(args) -> dict:
@@ -187,7 +300,8 @@ def run_scoring(args) -> dict:
         if os.path.exists(manifest["validation_reconstruction"]) else \
         pd.read_csv(os.path.join(args.report_dir, "validation_reconstruction.csv"))
 
-    models, calibrations = {}, {}
+    models = {}
+    cal_clean = {}
     input_dim = len(wcfg.features)
     for name in args.model:
         ckpt = os.path.join(args.models_dir, f"{name}.pt")
@@ -195,8 +309,23 @@ def run_scoring(args) -> dict:
             raise SystemExit(f"Model checkpoint missing: {ckpt} -- run training first")
         models[name] = load_model(ckpt, name, input_dim, wcfg.window_len, device)
         row = val_recon[val_recon["model"] == name].iloc[0]
-        calibrations[name] = {"error_p50": float(row["error_p50"]),
-                              "error_p99": float(row["error_p99"])}
+        cal_clean[name] = {c: float(row[c]) for c in row.index
+                           if str(c).startswith("error_p")}
+        cal_clean[name]["n_val_windows"] = int(row.get("n_val_windows", 0))
+
+    # --- calibrations: which modes do we need? ---------------------------
+    primary_mode = args.calibration_mode
+    compare = bool(args.compare_calibration)
+    need_track = (primary_mode == "track_purity") or compare
+    cal_by_mode = {"clean_truth": cal_clean}
+    cal_track, calib_meta = None, None
+    if need_track:
+        cal_track, calib_meta = build_track_purity_calibration(
+            models, normalizer, wcfg, args, device)
+        cal_by_mode["track_purity"] = cal_track
+        calib_dir = os.path.dirname(args.calibration_output)
+        json_path, csv_path = write_calibration_files(calib_dir, cal_track, calib_meta)
+        print(f"track-purity calibration written: {json_path}")
 
     runs = discover_track_files(args.tracks_dir)
     if args.threshold_db is not None:
@@ -210,8 +339,8 @@ def run_scoring(args) -> dict:
     all_scores = []
     for date, thr, path in runs:
         print(f"[{date} thr={thr:g}dB] scoring {os.path.basename(path)} ...", flush=True)
-        scores = score_one_run(date, thr, path, models, calibrations, normalizer,
-                               wcfg, args, device)
+        scores = score_one_run(date, thr, path, models, cal_by_mode, primary_mode,
+                               compare, normalizer, wcfg, args, device)
         kept = scores[scores["keep_sequence_prior"]]
         print(f"[{date} thr={thr:g}dB] track-model rows: {len(scores)}, kept: {len(kept)}")
         all_scores.append(scores)
@@ -220,12 +349,32 @@ def run_scoring(args) -> dict:
     scores[[c for c in SCORE_CSV_COLUMNS if c in scores.columns]].to_csv(
         key_output, index=False, float_format="%.6g")
 
-    by_mt = aggregate_by_model_threshold(scores, args.score_threshold)
-    sweep = sweep_table(scores, [float(p) for p in args.sweep_thresholds.split(",")])
+    sweep_cols = [float(p) for p in args.sweep_thresholds.split(",")]
     edges = [float(p) for p in args.range_bins_m.split(",")]
-    range_bins = range_bin_table(scores, edges)
-    comparison, s9_ok, s11_ok = compare_with_stage09_stage11(by_mt, args.stage09_dir,
-                                                             args.stage11_dir)
+
+    # primary aggregation drives the main report + four-way comparison
+    by_mt = aggregate_by_model_threshold(scores, args.score_threshold)
+    by_mt["calibration_mode"] = primary_mode
+    sweep = sweep_table(scores, sweep_cols)
+    range_bins = range_bin_table(scores, edges, args.score_threshold)
+
+    # per-mode aggregations for the calibration comparison (both when comparing)
+    by_mt_by_mode = {primary_mode: by_mt}
+    calib_comparison = None
+    if compare:
+        by_mt_by_mode = {}
+        frames_for_compare = []
+        for mode in ("clean_truth", "track_purity"):
+            col = ("sequence_prior_score_clean_truth" if mode == "clean_truth"
+                   else "sequence_prior_score_track_calibrated")
+            m_by_mt = aggregate_by_model_threshold(scores, args.score_threshold, col)
+            m_by_mt["calibration_mode"] = mode
+            by_mt_by_mode[mode] = m_by_mt
+            frames_for_compare.append(m_by_mt)
+        calib_comparison = build_calibration_comparison(by_mt_by_mode, args.score_threshold)
+
+    comparison, s9_ok, s11_ok = compare_with_stage09_stage11(
+        by_mt, args.stage09_dir, args.stage11_dir)
 
     by_mt.to_csv(os.path.join(args.report_dir, "sequence_metrics_by_model_threshold.csv"),
                  index=False)
@@ -234,94 +383,125 @@ def run_scoring(args) -> dict:
                       index=False)
     comparison.to_csv(os.path.join(args.report_dir,
                                    "stage08_vs_stage09_vs_stage11_vs_stage12.csv"), index=False)
+    if calib_comparison is not None:
+        calib_dir = os.path.dirname(args.calibration_output)
+        os.makedirs(calib_dir, exist_ok=True)
+        calib_comparison.to_csv(
+            os.path.join(calib_dir, "sequence_calibration_comparison.csv"), index=False)
 
     if not args.no_plots:
         make_scoring_plots(scores, by_mt, sweep, comparison, s9_ok, s11_ok,
                            os.path.join(args.report_dir, "plots"))
-    report_path = write_scoring_report(args.report_dir, scores, by_mt, comparison,
-                                       range_bins, val_recon, manifest, s9_ok, s11_ok,
-                                       args.score_threshold)
-    run_scoring_gate(args.report_dir, scores, by_mt, comparison, s9_ok, s11_ok)
+        if need_track:
+            make_calibration_plots(cal_track, cal_clean, by_mt_by_mode,
+                                   os.path.join(args.report_dir, "plots"))
+    report_path = write_scoring_report(
+        args.report_dir, scores, by_mt, comparison, range_bins, val_recon, manifest,
+        s9_ok, s11_ok, args.score_threshold, primary_mode=primary_mode,
+        cal_track=cal_track, cal_clean=cal_clean, calib_comparison=calib_comparison,
+        calib_meta=calib_meta)
+    run_scoring_gate(args.report_dir, scores, by_mt, comparison, s9_ok, s11_ok,
+                     cal_track=cal_track,
+                     calibration_json=(args.calibration_output if need_track else None),
+                     by_mt_by_mode=(by_mt_by_mode if compare else None),
+                     score_threshold=args.score_threshold)
 
     print(f"\nreport: {os.path.abspath(report_path)}")
-    print("\nmean per model (false reduction / true retention):")
+    print(f"\nprimary calibration mode: {primary_mode}")
+    print("mean per model (false reduction / true retention):")
     for model, g in by_mt.groupby("model"):
         print(f"  {model:<10} {g['false_track_reduction'].mean():.3f} / "
               f"{g['true_track_retention'].mean():.3f}")
-    return {"scores": scores, "by_mt": by_mt, "comparison": comparison}
+    if compare:
+        print("clean-truth vs track-purity mean true retention:")
+        for mode in ("clean_truth", "track_purity"):
+            print(f"  {mode:<13} {by_mt_by_mode[mode]['true_track_retention'].mean():.3f}")
+    return {"scores": scores, "by_mt": by_mt, "comparison": comparison,
+            "cal_track": cal_track, "by_mt_by_mode": by_mt_by_mode}
 
 
-def self_test() -> None:
-    """Train tiny models on synthetic truth, then score four synthetic tracks."""
+def _load_train12():
     import importlib.util
     spec = importlib.util.spec_from_file_location(
         "train12", os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "12_train_sequence_priors.py"))
     train12 = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(train12)
+    return train12
 
-    rng = np.random.default_rng(12)
-    with tempfile.TemporaryDirectory() as tmp:
-        # --- tiny training on smooth synthetic truth ---------------------
-        truth_dir = os.path.join(tmp, "truth")
-        os.makedirs(truth_dir)
-        for i, date in enumerate(["2022-01-01", "2022-01-02"]):
-            train12.make_synthetic_truth(os.path.join(truth_dir, f"radar_truth_{date}.csv"),
-                                         date, n_traj=8, n=80, seed=i)
+
+def _tiny_train(tmp, train12):
+    """Train tiny models on smooth synthetic truth; return the models dir."""
+    truth_dir = os.path.join(tmp, "truth")
+    os.makedirs(truth_dir)
+    for i, date in enumerate(["2022-01-01", "2022-01-02"]):
+        train12.make_synthetic_truth(os.path.join(truth_dir, f"radar_truth_{date}.csv"),
+                                     date, n_traj=8, n=80, seed=i)
+    saved_argv = sys.argv
+    sys.argv = [saved_argv[0]]  # the training parser must not see the score CLI flags
+    try:
         targs = train12.parse_args()
-        targs.truth_dir = truth_dir
-        targs.models_dir = os.path.join(tmp, "models")
-        targs.report_dir = os.path.join(tmp, "reports")
-        targs.holdout_date = ["2022-01-02"]
-        targs.window_len, targs.stride = 10, 2
-        targs.epochs, targs.batch_size = 6, 64
-        targs.hidden_dim, targs.latent_dim, targs.num_layers = 32, 8, 1
-        targs.overwrite = True
-        # reuse the training runner (it also validates its own outputs)
-        targs.model = ["mlp_dae", "gru_ae", "tcn_ae"]
-        targs.learning_rate, targs.weight_decay, targs.noise_std = 1e-3, 1e-5, 0.05
-        targs.seed, targs.device = 42, "auto"
-        train12.run_training(targs)
+    finally:
+        sys.argv = saved_argv
+    targs.truth_dir = truth_dir
+    targs.models_dir = os.path.join(tmp, "models")
+    targs.report_dir = os.path.join(tmp, "reports")
+    targs.holdout_date = ["2022-01-02"]
+    targs.window_len, targs.stride = 10, 2
+    targs.epochs, targs.batch_size = 6, 64
+    targs.hidden_dim, targs.latent_dim, targs.num_layers = 32, 8, 1
+    targs.overwrite = True
+    targs.model = ["mlp_dae", "gru_ae", "tcn_ae"]
+    targs.learning_rate, targs.weight_decay, targs.noise_std = 1e-3, 1e-5, 0.05
+    targs.seed, targs.device = 42, "auto"
+    train12.run_training(targs)
+    return targs.models_dir
 
-        # --- synthetic stage-8 tracks (spec schema) ----------------------
+
+def _write_spec_tracks(path_prefix, rows, track_ids):
+    pd.DataFrame(rows).to_csv(f"{path_prefix}.csv", index=False)
+    summary = path_prefix.replace("track_points_", "track_summary_")
+    pd.DataFrame({"track_id": track_ids}).to_csv(f"{summary}.csv", index=False)
+
+
+def _track_rows(track_id, date, thr, vfun, is_target, traj, n=40, dt=10.0,
+                p0=(15_000.0, 12_000.0, 1_000.0)):
+    rows, p = [], np.array(p0, dtype=float)
+    for k in range(n):
+        v = np.array(vfun(k), dtype=float)
+        p = p + v * dt
+        rows.append(dict(
+            date=date, threshold_db=thr, frame_id=k, timestamp=1_000.0 + dt * k,
+            track_id=track_id, is_confirmed=1, event_type="hit", assigned_detection_id=k,
+            state_x_m=p[0], state_y_m=p[1], state_z_m=p[2],
+            state_vx_mps=v[0], state_vy_mps=v[1], state_vz_mps=v[2],
+            is_target=is_target, trajectory_id=traj if is_target else None, snr_db=8.0))
+    return rows
+
+
+def self_test() -> None:
+    """Train tiny models on synthetic truth, then score four synthetic tracks."""
+    train12 = _load_train12()
+    with tempfile.TemporaryDirectory() as tmp:
+        models_dir = _tiny_train(tmp, train12)
+
         tracks_dir = os.path.join(tmp, "tracks")
         os.makedirs(tracks_dir)
-        date, dt, n = "2022-01-03", 10.0, 40
-
-        def make_track(track_id, vfun, is_target, traj):
-            rows = []
-            p = np.array([15_000.0, 12_000.0, 1_000.0])
-            for k in range(n):
-                v = np.array(vfun(k), dtype=float)
-                p = p + v * dt
-                rows.append(dict(
-                    date=date, threshold_db=0.0, frame_id=k, timestamp=1_000.0 + dt * k,
-                    track_id=track_id, is_confirmed=1, event_type="hit",
-                    assigned_detection_id=k,
-                    state_x_m=p[0], state_y_m=p[1], state_z_m=p[2],
-                    state_vx_mps=v[0], state_vy_mps=v[1], state_vz_mps=v[2],
-                    is_target=is_target, trajectory_id=traj if is_target else None,
-                    snr_db=8.0))
-            return rows
-
+        date = "2022-01-03"
         rows = []
-        rows += make_track(0, lambda k: (55 * np.sin(np.radians(30 + 0.5 * k)),
-                                         55 * np.cos(np.radians(30 + 0.5 * k)), 0.5), 1, "tA")
-        rows += make_track(1, lambda k: (52.0, 3.0, -0.5), 1, "tB")
-        # jagged false: velocity flips wildly
-        rows += make_track(2, lambda k: (150.0, -60.0, 15.0) if k % 2 == 0
-                           else (-120.0, 90.0, -15.0), 0, None)
-        # smooth but off-pattern: extreme vertical oscillation at odd speed
-        rows += make_track(3, lambda k: (15.0, 0.0, 12.0 * np.sin(k / 2)), 0, None)
-
-        pd.DataFrame(rows).to_csv(
-            os.path.join(tracks_dir, f"track_points_{date}_thr_0p0dB.csv"), index=False)
-        pd.DataFrame({"track_id": [0, 1, 2, 3]}).to_csv(
-            os.path.join(tracks_dir, f"track_summary_{date}_thr_0p0dB.csv"), index=False)
+        rows += _track_rows(0, date, 0.0, lambda k: (55 * np.sin(np.radians(30 + 0.5 * k)),
+                                                     55 * np.cos(np.radians(30 + 0.5 * k)),
+                                                     0.5), 1, "tA")
+        rows += _track_rows(1, date, 0.0, lambda k: (52.0, 3.0, -0.5), 1, "tB")
+        rows += _track_rows(2, date, 0.0, lambda k: (150.0, -60.0, 15.0) if k % 2 == 0
+                            else (-120.0, 90.0, -15.0), 0, None)
+        rows += _track_rows(3, date, 0.0, lambda k: (15.0, 0.0, 12.0 * np.sin(k / 2)), 0, None)
+        _write_spec_tracks(os.path.join(tracks_dir, f"track_points_{date}_thr_0p0dB"),
+                           rows, [0, 1, 2, 3])
 
         sargs = parse_args()
         sargs.tracks_dir = tracks_dir
-        sargs.models_dir = targs.models_dir
+        sargs.models_dir = models_dir
         sargs.stage09_dir = os.path.join(tmp, "no9")
         sargs.stage11_dir = os.path.join(tmp, "no11")
         sargs.report_dir = os.path.join(tmp, "score_reports")
@@ -357,10 +537,116 @@ def self_test() -> None:
     print("\nStage 12 scoring self-test passed.")
 
 
+def self_test_track_purity() -> None:
+    """Stage 12.5: show clean-truth calibration under-retains noisy true tracks and
+    track-purity calibration recovers them, while still rejecting a false track."""
+    train12 = _load_train12()
+    rng = np.random.default_rng(125)
+    with tempfile.TemporaryDirectory() as tmp:
+        models_dir = _tiny_train(tmp, train12)  # clean band (low error) from smooth truth
+
+        tracks_dir = os.path.join(tmp, "tracks")
+        os.makedirs(tracks_dir)
+
+        def noisy_true(track_id, date, thr, base, traj, sigma=6.0):
+            # smooth heading with velocity jitter -> elevated (but genuine) recon error
+            def vfun(k):
+                ang = np.radians(20 + 0.4 * k)
+                bx, by, bz = base * np.sin(ang), base * np.cos(ang), 0.4
+                j = rng.normal(0, sigma, size=3)
+                return (bx + j[0], by + j[1], bz + 0.3 * j[2])
+            return _track_rows(track_id, date, thr, vfun, 1, traj)
+
+        # calibration run: high-purity NOISY true tracks (higher thresholds -> cleaner)
+        cal_date = "2022-01-04"
+        cal_rows = []
+        for tid in range(10, 17):
+            cal_rows += noisy_true(tid, cal_date, 6.0, 50.0 + tid, f"c{tid}")
+        _write_spec_tracks(os.path.join(tracks_dir, f"track_points_{cal_date}_thr_6p0dB"),
+                           cal_rows, list(range(10, 17)))
+
+        # eval run: noisy true tracks (0,1) + jagged false (2)
+        eval_date = "2022-01-03"
+        eval_rows = []
+        eval_rows += noisy_true(0, eval_date, 0.0, 52.0, "tA")
+        eval_rows += noisy_true(1, eval_date, 0.0, 54.0, "tB")
+        eval_rows += _track_rows(2, eval_date, 0.0, lambda k: (150.0, -60.0, 15.0) if k % 2 == 0
+                                 else (-120.0, 90.0, -15.0), 0, None)
+        _write_spec_tracks(os.path.join(tracks_dir, f"track_points_{eval_date}_thr_0p0dB"),
+                           eval_rows, [0, 1, 2])
+
+        sargs = parse_args()
+        sargs.tracks_dir = tracks_dir
+        sargs.calibration_tracks_dir = tracks_dir
+        sargs.models_dir = models_dir
+        sargs.stage09_dir = os.path.join(tmp, "no9")
+        sargs.stage11_dir = os.path.join(tmp, "no11")
+        sargs.report_dir = os.path.join(tmp, "score_reports")
+        sargs.calibration_output = os.path.join(
+            tmp, "score_reports", "calibration", "sequence_track_calibration.json")
+        sargs.detections_dir = tmp
+        sargs.model = ["mlp_dae", "gru_ae", "tcn_ae"]
+        sargs.threshold_db = [0.0]
+        sargs.date = [eval_date]
+        sargs.calibration_mode = "track_purity"
+        sargs.calibration_date = [cal_date]
+        sargs.calibration_threshold_db = [6.0]
+        sargs.calibration_min_target_fraction = 0.95
+        sargs.calibration_min_purity = 0.95
+        sargs.compare_calibration = True
+        sargs.score_threshold = 0.5
+        sargs.overwrite = True
+        out = run_scoring(sargs)
+        scores = out["scores"]
+
+        calib_dir = os.path.dirname(sargs.calibration_output)
+        assert os.path.exists(sargs.calibration_output), "calibration JSON missing"
+        assert os.path.exists(os.path.join(calib_dir, "sequence_track_calibration.csv")), \
+            "calibration CSV missing"
+        cal_track = out["cal_track"]
+        for m, d in cal_track.items():
+            assert d["n_calibration_tracks"] > 0, f"{m}: n_calibration_tracks must be > 0"
+            assert d["n_calibration_windows"] > 0, f"{m}: n_calibration_windows must be > 0"
+
+        tc = scores["sequence_prior_score_track_calibrated"]
+        tc = tc[np.isfinite(tc)]
+        assert tc.between(0, 1).all(), "track-calibrated scores must be in [0, 1]"
+
+        def retention(col):
+            true = scores[scores["is_true_track"]]
+            true = true[np.isfinite(true[col])]
+            kept = true[true[col] >= 0.5]
+            return len(kept) / len(true) if len(true) else 0.0
+
+        clean_ret = retention("sequence_prior_score_clean_truth")
+        track_ret = retention("sequence_prior_score_track_calibrated")
+        assert track_ret >= clean_ret, \
+            f"track calibration retention ({track_ret:.3f}) must be >= clean ({clean_ret:.3f})"
+
+        false2 = scores[(scores["track_id"] == 2)]["keep_sequence_prior"]
+        assert not false2.all(), "jagged false track must be rejected by >=1 model at 0.5"
+
+        text = open(os.path.join(sargs.report_dir, "sequence_prior_report.md")).read()
+        for needle in ["Stage 12.5 Noise-Matched Calibration",
+                       "autoencoder weights are unchanged",
+                       "Truth labels are used only to select calibration tracks",
+                       "not VAE"]:
+            assert needle in text, f"report missing expected text: {needle!r}"
+
+        print(f"\nclean-truth true-track retention @0.5: {clean_ret:.3f}")
+        print(f"track-purity true-track retention @0.5: {track_ret:.3f}")
+
+    print("\nStage 12 scoring self-test passed.")
+    print("Stage 12.5 calibration self-test passed.")
+
+
 def main() -> None:
     args = parse_args()
     if args.self_test:
-        self_test()
+        if args.calibration_mode == "track_purity":
+            self_test_track_purity()
+        else:
+            self_test()
         return
     run_scoring(args)
     print("\n12_score_tracks_sequence_prior completed successfully.")
