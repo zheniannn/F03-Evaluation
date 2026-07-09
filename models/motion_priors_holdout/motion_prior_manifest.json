@@ -1,0 +1,36 @@
+{
+ "created_by": "Stage 10",
+ "files": [
+  "acceleration_prior.json",
+  "joint_motion_prior.json",
+  "motion_prior_config.json",
+  "motion_prior_manifest.json",
+  "speed_prior.json",
+  "turn_rate_prior.json",
+  "vector_acceleration_prior.json",
+  "vertical_speed_prior.json"
+ ],
+ "features_fitted": [
+  "accel_abs_mps2",
+  "accel_vector_mps2",
+  "speed_mps",
+  "turn_rate_abs_deg_s",
+  "vertical_speed_abs_mps"
+ ],
+ "features_unavailable": [],
+ "n_samples_used": {
+  "speed_mps": 7408630,
+  "accel_abs_mps2": 7292113,
+  "accel_vector_mps2": 7292088,
+  "turn_rate_abs_deg_s": 7292114,
+  "vertical_speed_abs_mps": 7409558
+ },
+ "train_dates": [
+  "2022-06-06",
+  "2022-06-13",
+  "2022-06-20"
+ ],
+ "holdout_dates": [
+  "2022-06-27"
+ ]
+}
