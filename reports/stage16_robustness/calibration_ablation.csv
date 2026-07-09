@@ -1,0 +1,25 @@
+model,threshold_db,calibration_mode,true_track_retention,false_track_reduction,precision_after,median_score_true_tracks,median_score_false_tracks,notes
+gru_ae,-5.0,clean_truth,0.078652238071815,1.0,1.0,0.0,0.0,clean-truth under-retains noisy true tracks
+gru_ae,-5.0,track_purity,0.9851451057550418,0.9817073170731708,0.9998502321401828,0.9547817059315784,0.0,track-purity fixes the noisy-track domain shift
+gru_ae,0.0,clean_truth,0.0819256352586495,1.0,1.0,0.0,0.0,clean-truth under-retains noisy true tracks
+gru_ae,0.0,track_purity,0.980236397569029,0.9375,0.9999511837930192,0.9587909907833768,0.0,track-purity fixes the noisy-track domain shift
+gru_ae,3.0,clean_truth,0.092871563907439,1.0,1.0,0.0,0.0,clean-truth under-retains noisy true tracks
+gru_ae,3.0,track_purity,0.9703887767251644,1.0,1.0,0.9673735119639666,0.0,track-purity fixes the noisy-track domain shift
+gru_ae,6.0,clean_truth,0.1240642356918618,1.0,1.0,0.0728403854505761,0.0,clean-truth under-retains noisy true tracks
+gru_ae,6.0,track_purity,0.9713837237382276,1.0,1.0,0.9806896930930248,0.1031373942806374,track-purity fixes the noisy-track domain shift
+mlp_dae,-5.0,clean_truth,0.1104279390063944,1.0,1.0,0.1144880404375095,0.0,clean-truth under-retains noisy true tracks
+mlp_dae,-5.0,track_purity,0.9874077717658633,1.0,1.0,0.9710645790032404,0.0,track-purity fixes the noisy-track domain shift
+mlp_dae,0.0,clean_truth,0.1161410728812748,1.0,1.0,0.1222781604485714,0.0,clean-truth under-retains noisy true tracks
+mlp_dae,0.0,track_purity,0.9812891802651098,0.9375,0.9999512361632612,0.9721637626817632,0.0,track-purity fixes the noisy-track domain shift
+mlp_dae,3.0,clean_truth,0.139048506496868,1.0,1.0,0.1490140007375898,0.0,clean-truth under-retains noisy true tracks
+mlp_dae,3.0,track_purity,0.9713205984366102,1.0,1.0,0.9759361820072108,0.0,track-purity fixes the noisy-track domain shift
+mlp_dae,6.0,clean_truth,0.1817797633421878,1.0,1.0,0.2055067170393696,0.0,clean-truth under-retains noisy true tracks
+mlp_dae,6.0,track_purity,0.971142236174837,1.0,1.0,0.983907287924214,0.0,track-purity fixes the noisy-track domain shift
+tcn_ae,-5.0,clean_truth,0.0,1.0,,0.0,0.0,clean-truth under-retains noisy true tracks
+tcn_ae,-5.0,track_purity,0.9451057550418102,0.9878048780487804,0.9998959200666112,0.9239141541549588,0.0,track-purity fixes the noisy-track domain shift
+tcn_ae,0.0,clean_truth,0.0,1.0,,0.0,0.0,clean-truth under-retains noisy true tracks
+tcn_ae,0.0,track_purity,0.9267358951045604,0.875,0.9998967368855844,0.9275544446085032,0.0,track-purity fixes the noisy-track domain shift
+tcn_ae,3.0,clean_truth,0.0,1.0,,0.0,0.0,clean-truth under-retains noisy true tracks
+tcn_ae,3.0,track_purity,0.9248848164828908,1.0,1.0,0.942677369892674,0.0038459952259982,track-purity fixes the noisy-track domain shift
+tcn_ae,6.0,clean_truth,0.0,1.0,,0.0,0.0,clean-truth under-retains noisy true tracks
+tcn_ae,6.0,track_purity,0.938782902680512,1.0,1.0,0.9646311671236688,0.247288465464146,track-purity fixes the noisy-track domain shift

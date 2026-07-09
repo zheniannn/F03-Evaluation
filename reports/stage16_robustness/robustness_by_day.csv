@@ -1,0 +1,2 @@
+date,model,calibration_mode,thresholds_included,stage08_true_tracks,stage08_false_tracks,stage12_kept_true_tracks,stage12_kept_false_tracks,true_track_retention,false_track_reduction,precision_before,precision_after,n_thresholds,notes
+2022-06-06,mlp_dae,track_purity,"-5,0,3,6",77108,187,75429,1,0.9782253462675727,0.9946524064171123,0.9975806973284171,0.9999867426753282,4,SINGLE-DAY evidence only -- robustness across days is not yet established

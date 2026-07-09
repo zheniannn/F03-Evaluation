@@ -550,9 +550,58 @@ python scripts/15_evaluate_diffusion_denoiser.py \
 ```
 
 Both scripts have `--self-test` and require PyTorch (clear failure message
-if missing). Depending on results, **Stage 16** will be either a compact
-model-zoo benchmark of only the promising families, or a robustness /
-ablation study across all four days and clutter/noise levels.
+if missing). Depending on results, **Stage 16** consolidates robustness and
+ablation evidence for the winner before any final packaging.
+
+## Stage 16 — Robustness and ablation study
+
+A **consolidation** stage: it **adds no new model** and retrains nothing
+(only the optional `--run-missing` may call the existing stage-12 scorer for
+day/threshold combinations that lack compact scores). It reads the compact
+reports from stages 08 / 09 / 12 / 14 / 15 and stress-tests the current best
+method — **stage-12.5 deterministic sequence autoencoders with noise-matched
+calibration** — answering whether the result holds beyond one configuration:
+robustness by day and threshold, an **MLP/GRU/TCN model ablation**, a
+**clean-truth vs track-purity calibration ablation**, score-threshold
+sensitivity with recommended operating points, a **windowability audit** (the
+stage-14 9/12 dB denominator caveat), range-bin robustness, and a failure-mode
+summary, all rolled up into a key-findings table.
+
+**Findings:** stage 12.5 holds across all four informative thresholds
+(mean ~0.984 false reduction at ~0.978 true retention); **track-purity
+calibration is necessary** (clean-truth retention ~0.08 → track-purity ~0.96);
+**mlp_dae ranks best** with gru_ae very close and tcn_ae weaker; 9/12 dB have
+**zero windowable false tracks** (caveat confirmed); and the evidence is
+currently **single-day (2022-06-06)** — multi-day confirmation is the main
+remaining gap. Stage 12.5 remains the recommended primary filter and Stage 09
+the interpretable fallback.
+
+- **Inputs:** the stage-08/09/12/14/15 report directories (robust to missing
+  files); optionally `data/active/tracks_kalman/` for `--run-missing`.
+- **Outputs:** `reports/stage16_robustness/` — 11 compact CSVs (inventory,
+  by-day, by-threshold, model/calibration ablations, sensitivity,
+  windowability, range-bin, failure-mode, key-findings), the report, and
+  seven plots.
+
+```bash
+python scripts/16_robustness_ablation.py \
+  --stage08-dir reports/stage08_kalman_baseline \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage12-dir reports/stage12_sequence_priors \
+  --stage14-dir reports/stage14_method_benchmark \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/sequence_priors \
+  --output-dir reports/stage16_robustness \
+  --threshold-db -5 0 3 6 \
+  --overwrite
+```
+
+Add `--include-high-thresholds` to fold 9/12 dB into the main tables (with the
+documented caveat), or `--run-missing` to score any missing all-day
+combinations first (may be expensive). `--self-test` runs on tiny synthetic
+reports. Run Stage 16 **before final report packaging or a broader model
+zoo** — it establishes whether the stage-12.5 result is stable enough to
+build on.
 
 ## Audit
 

@@ -1,0 +1,16 @@
+row_type,model,calibration_mode,threshold_db,true_track_retention,false_track_reduction,precision_after,kept_true_tracks,kept_false_tracks,rank_at_threshold,mean_true_retention,mean_false_reduction,mean_precision_after,overall_rank
+per_threshold,mlp_dae,track_purity,-5.0,0.9874077717658633,1.0,1.0,20074.0,0.0,1.0,,,,
+per_threshold,tcn_ae,track_purity,-5.0,0.9451057550418102,0.9878048780487804,0.9998959200666112,19214.0,2.0,2.0,,,,
+per_threshold,gru_ae,track_purity,-5.0,0.9851451057550418,0.9817073170731708,0.9998502321401828,20028.0,3.0,3.0,,,,
+per_threshold,mlp_dae,track_purity,0.0,0.9812891802651098,0.9375,0.9999512361632612,20506.0,1.0,1.0,,,,
+per_threshold,gru_ae,track_purity,0.0,0.980236397569029,0.9375,0.9999511837930192,20484.0,1.0,2.0,,,,
+per_threshold,tcn_ae,track_purity,0.0,0.9267358951045604,0.875,0.9998967368855844,19366.0,2.0,3.0,,,,
+per_threshold,mlp_dae,track_purity,3.0,0.9713205984366102,1.0,1.0,18763.0,0.0,1.0,,,,
+per_threshold,gru_ae,track_purity,3.0,0.9703887767251644,1.0,1.0,18745.0,0.0,2.0,,,,
+per_threshold,tcn_ae,track_purity,3.0,0.9248848164828908,1.0,1.0,17866.0,0.0,3.0,,,,
+per_threshold,gru_ae,track_purity,6.0,0.9713837237382276,1.0,1.0,16090.0,0.0,1.0,,,,
+per_threshold,mlp_dae,track_purity,6.0,0.971142236174837,1.0,1.0,16086.0,0.0,2.0,,,,
+per_threshold,tcn_ae,track_purity,6.0,0.938782902680512,1.0,1.0,15550.0,0.0,3.0,,,,
+aggregate,mlp_dae,track_purity,,,,,,,,0.9777899466606051,0.984375,0.9999878090408153,1.0
+aggregate,gru_ae,track_purity,,,,,,,,0.9767885009468656,0.9798018292682927,0.9999503539833005,2.0
+aggregate,tcn_ae,track_purity,,,,,,,,0.9338773423274433,0.9657012195121951,0.9999481642380489,3.0

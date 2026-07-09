@@ -1,0 +1,7 @@
+finding_id,finding,evidence_file,metric,value,interpretation
+F1,Stage 12.5 is the strongest current false-track filter,robustness_by_threshold.csv,mean_false_reduction(-5..6dB),0.9844,keeps mean 0.978 true tracks while removing nearly all false tracks
+F2,Track-purity (noise-matched) calibration is necessary,calibration_ablation.csv,mean_true_retention clean_truth vs track_purity,0.077 -> 0.963,clean-truth calibration under-retains noisy true tracks; track-purity fixes it
+F3,MLP/GRU/TCN model ablation,model_ablation_mlp_gru_tcn.csv,best_model_by_mean_false_reduction,mlp_dae,MLP and GRU are close and strong; TCN retains fewer true tracks
+F4,High thresholds (9/12 dB) carry a windowability denominator caveat,windowability_audit.csv,windowable_false_tracks at 9/12 dB,0.0,"few/no windowable false tracks remain, so cross-method false-reduction is not apples-to-apples there"
+F5,Diffusion helps regularization/gap filling but is not the primary filter,reports/stage15_diffusion_denoising/diffusion_denoising_report.md,role,secondary,stage-15 diffusion smooths tracks and fills gaps but does not beat stage 12.5 as a classifier
+F6,Robustness currently limited to available days,robustness_by_day.csv,n_days,1,single-day (2022-06-06) evidence; multi-day confirmation still required

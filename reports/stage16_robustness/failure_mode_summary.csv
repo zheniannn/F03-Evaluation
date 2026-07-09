@@ -1,0 +1,7 @@
+case_type,threshold_db,count,median_range_m,median_purity,median_target_fraction,notes
+false_survives_s09_rejected_s12,-5,15,1674.6,0.0,0.0,
+false_survives_s09_rejected_s12,0,5,1161.5,0.0,0.0,
+false_survives_s12,0,1,5792.4,0.78378,0.78378,
+true_kept_s12_rejected_vae,-5,20,110860.0,1.0,1.0,
+true_rejected_s12,-5,20,113705.0,1.0,1.0,
+vae_latent_outlier_true,-5,20,108780.0,1.0,1.0,
