@@ -1,0 +1,7 @@
+threshold_db,best_method_id,best_method_family,score_threshold,true_track_retention,false_track_reduction,precision_after,kept_true_tracks,kept_false_tracks,selection_rule
+-5.0,stage12_gru_ae_track_calibrated,sequence_autoencoder,0.7,0.9627151992129858,1.0,1.0,19572.0,0.0,"retention>=0.95, max false_reduction"
+0.0,stage12_mlp_dae_track_calibrated,sequence_autoencoder,0.2,0.9940661338948175,0.9375,0.999951862905555,20773.0,1.0,"retention>=0.95, max false_reduction"
+3.0,stage12_gru_ae_track_calibrated,sequence_autoencoder,0.1,0.9884557643526427,1.0,1.0,19094.0,0.0,"retention>=0.95, max false_reduction"
+6.0,stage12_gru_ae_track_calibrated,sequence_autoencoder,0.2,0.9866578121226757,1.0,1.0,16343.0,0.0,"retention>=0.95, max false_reduction"
+9.0,stage11_adsb_marginal,adsb_marginal_prior,0.7,0.9608140837942378,0.5576923076923077,0.9982723004694836,26579.0,46.0,"retention>=0.95, max false_reduction"
+12.0,stage11_adsb_marginal,adsb_marginal_prior,0.7,0.9581892211374283,0.4897959183673469,0.9988590205832687,21886.0,25.0,"retention>=0.95, max false_reduction"

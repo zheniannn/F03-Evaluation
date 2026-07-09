@@ -1,0 +1,6 @@
+stage,method_family,runtime_reported,notes
+08,kalman_only,2m29s; 11m04s; 2m29s,parsed from run_log.md
+09,hand_physics,3m37s; 5m41s,parsed from run_log.md
+11,adsb_marginal_prior,unknown,no run log parsed
+12.5,sequence_autoencoder,unknown,no run log parsed
+13,vae_prior,unknown,"vae_prior_report.md present, no runtime pattern"

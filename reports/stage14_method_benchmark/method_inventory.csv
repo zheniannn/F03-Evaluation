@@ -1,0 +1,8 @@
+stage,method_family,method_id,source_file,available,rows_loaded,notes
+07,threshold_only,threshold_only,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage07_threshold_only/threshold_overall.csv,True,6,frame-level context only; not a track filter
+08,kalman_only,kalman_only,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage08_kalman_baseline/kalman_metrics_by_day.csv,True,6,no-filter baseline
+09,hand_physics,stage09_hand_physics,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage09_physics_scoring/physics_filter_sweep.csv,True,54,
+11,adsb_marginal_prior,stage11_adsb_marginal,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage11_adsb_prior_scoring/adsb_prior_filter_sweep.csv,True,54,
+12.5,sequence_autoencoder,stage12_sequence_autoencoders,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage12_sequence_priors/sequence_filter_sweep.csv,True,162,
+12.5,sequence_autoencoder,stage12_clean_truth,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage12_sequence_priors/calibration/sequence_calibration_comparison.csv,True,36,clean-truth calibration (for contrast)
+13,vae_prior,stage13_vae_prior,/home/tzhen/projects/PLSWORK/F03-Evaluation/reports/stage13_vae_prior/vae_filter_sweep.csv,True,108,

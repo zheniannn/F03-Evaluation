@@ -448,9 +448,56 @@ python scripts/13_score_tracks_vae_prior.py \
 ```
 
 Both scripts have `--self-test`. Requires PyTorch (they fail with a clear
-message if `torch` is missing). **Stage 14** will test diffusion or a
-broader model-zoo benchmark, depending on whether the VAE adds value over
-stage 12.5.
+message if `torch` is missing). **Stage 14** consolidates and ranks the
+existing methods before any diffusion / model-zoo work.
+
+## Stage 14 — Unified method benchmark and operating-point selection
+
+A **consolidation** stage: it **adds no new model and retrains nothing**.
+Stage 14 reads the compact report CSVs from stages 07 / 08 / 09 / 11 / 12.5
+/ 13, normalizes every track-level keep/reject method into one operating-
+point schema, and answers *which existing method to use before building
+anything new*. It compares **Stage 09** (hand physics), **Stage 11**
+(ADS-B marginal priors), **Stage 12.5** (deterministic sequence
+autoencoders), and **Stage 13** (VAE) — with Stage 08 as the no-filter
+baseline and Stage 07 as frame-level context.
+
+It produces a method inventory (missing files flagged), unified metrics,
+best method per detection threshold, matched-retention and matched-false-
+reduction comparisons, a Pareto frontier, descriptive rankings, a runtime
+inventory, and (when the large per-track score CSVs are present locally)
+failure-case candidates. **Headline:** the deterministic **Stage 12.5**
+sequence autoencoders are the strongest learned filter (at −5 dB, matched
+to ~0.97 true retention, they remove ~100% of false tracks vs ~79% for
+hand physics and ~30% for ADS-B priors); **Stage 13 VAE does not improve on
+them**; **Stage 09 remains the strongest interpretable fallback**. The
+report states plainly that the utility scores are descriptive, not absolute.
+
+- **Inputs:** `reports/stage07..stage13` report directories (robust to
+  missing files — it warns and continues).
+- **Outputs:** `reports/stage14_method_benchmark/` — 11 CSVs
+  (`unified_method_metrics.csv`, `best_method_by_threshold.csv`,
+  matched/Pareto/rankings/runtime/inventory/failure-case), the report, and
+  six plots in `plots/`.
+
+```bash
+python scripts/14_benchmark_methods.py \
+  --stage07-dir reports/stage07_threshold_only \
+  --stage08-dir reports/stage08_kalman_baseline \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage11-dir reports/stage11_adsb_prior_scoring \
+  --stage12-dir reports/stage12_sequence_priors \
+  --stage13-dir reports/stage13_vae_prior \
+  --output-dir reports/stage14_method_benchmark \
+  --date 2022-06-06 \
+  --target-retention 0.97 \
+  --target-false-reduction 0.95 \
+  --overwrite
+```
+
+`--self-test` runs on tiny synthetic reports. **Stage 15** should either
+test diffusion specifically for denoising / gap filling, or build a broader
+model-zoo benchmark only if a clearly defined gap remains.
 
 ## Audit
 

@@ -1,0 +1,82 @@
+case_type,date,threshold_db,track_id,method_context,reason,score_stage09,score_stage12,score_stage13,target_fraction,purity,position_rmse_m,median_range_m
+false_survives_s09_rejected_s12,2022-06-06,-5,57822,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.6662,0.378962,0.57351,0.0,0.0,,1674.6
+false_survives_s09_rejected_s12,2022-06-06,-5,77442,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.51287,0.0130748,0.0333819,0.0,0.0,,4495.3
+false_survives_s09_rejected_s12,2022-06-06,-5,90017,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.54934,0.325213,0.471808,0.0,0.0,,2206.8
+false_survives_s09_rejected_s12,2022-06-06,-5,110590,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.50157,0.0,0.0,0.0,0.0,,3935.3
+false_survives_s09_rejected_s12,2022-06-06,-5,150259,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.51748,0.0,0.0,0.0,0.0,,973.15
+false_survives_s09_rejected_s12,2022-06-06,-5,157863,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.5099,0.0,0.0,0.0,0.0,,2724.8
+false_survives_s09_rejected_s12,2022-06-06,-5,159145,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.56627,0.154019,0.351143,0.0,0.0,,1352.8
+false_survives_s09_rejected_s12,2022-06-06,-5,183582,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.55037,0.0376115,0.309174,0.0,0.0,,1252.5
+false_survives_s09_rejected_s12,2022-06-06,-5,226123,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.55627,0.0,0.0,0.0,0.0,,614.07
+false_survives_s09_rejected_s12,2022-06-06,-5,283827,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.52029,0.25485,0.542006,0.0,0.0,,1222.2
+false_survives_s09_rejected_s12,2022-06-06,-5,310153,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.51095,0.0,0.0,0.0,0.0,,577.61
+false_survives_s09_rejected_s12,2022-06-06,-5,361899,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.56149,0.0,0.157771,0.0,0.0,,1804.6
+false_survives_s09_rejected_s12,2022-06-06,-5,371704,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.55991,0.11251,0.186314,0.0,0.0,,2617.9
+false_survives_s09_rejected_s12,2022-06-06,-5,373154,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.56559,0.451652,0.548788,0.78947,0.78947,91.603,9561.4
+false_survives_s09_rejected_s12,2022-06-06,-5,393575,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.51839,0.0,0.0,0.0,0.0,,1226.1
+false_survives_s09_rejected_s12,2022-06-06,0,20974,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.65464,0.0,0.13998,0.0,0.0,,1161.5
+false_survives_s09_rejected_s12,2022-06-06,0,76053,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.56189,0.0,0.0,0.0,0.0,,2422.8
+false_survives_s09_rejected_s12,2022-06-06,0,119142,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.52078,0.0,0.0,0.0,0.0,,954.03
+false_survives_s09_rejected_s12,2022-06-06,0,130520,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.5664,0.0,0.0,0.0,0.0,,635.45
+false_survives_s09_rejected_s12,2022-06-06,0,175821,stage09 vs stage12.5,false track kept by hand physics but rejected by sequence AE,0.54816,0.0,0.0,0.0,0.0,,3722.1
+false_survives_s12,2022-06-06,0,186652,stage12.5,false track survives sequence AE filter,0.53624,1.0,0.975663,0.78378,0.78378,72.062,5792.4
+true_rejected_s12,2022-06-06,-5,1261,stage12.5,true track rejected by sequence AE,0.56983,0.0,0.0,0.85,0.85,180.27,15911.0
+true_rejected_s12,2022-06-06,-5,4029,stage12.5,true track rejected by sequence AE,0.6364,0.371791,0.116211,1.0,1.0,343.4,95409.0
+true_rejected_s12,2022-06-06,-5,6836,stage12.5,true track rejected by sequence AE,0.52696,0.131367,0.146205,0.92308,0.92308,365.76,98459.0
+true_rejected_s12,2022-06-06,-5,9859,stage12.5,true track rejected by sequence AE,0.63653,0.237191,0.124881,1.0,1.0,492.17,130460.0
+true_rejected_s12,2022-06-06,-5,11176,stage12.5,true track rejected by sequence AE,0.67041,0.443886,0.52259,1.0,1.0,366.62,113490.0
+true_rejected_s12,2022-06-06,-5,17640,stage12.5,true track rejected by sequence AE,0.61786,0.0,0.0,1.0,1.0,300.85,97423.0
+true_rejected_s12,2022-06-06,-5,20574,stage12.5,true track rejected by sequence AE,0.51713,0.449574,0.188022,1.0,1.0,444.31,113760.0
+true_rejected_s12,2022-06-06,-5,21226,stage12.5,true track rejected by sequence AE,0.66421,0.475542,0.443549,1.0,1.0,432.24,112080.0
+true_rejected_s12,2022-06-06,-5,21373,stage12.5,true track rejected by sequence AE,0.51927,0.347665,0.259804,1.0,1.0,362.29,119050.0
+true_rejected_s12,2022-06-06,-5,21591,stage12.5,true track rejected by sequence AE,0.61428,0.393609,0.151136,1.0,1.0,388.98,117260.0
+true_rejected_s12,2022-06-06,-5,28403,stage12.5,true track rejected by sequence AE,0.78776,0.493177,0.430952,1.0,1.0,260.47,77016.0
+true_rejected_s12,2022-06-06,-5,39474,stage12.5,true track rejected by sequence AE,0.65591,0.235358,0.174372,1.0,1.0,343.69,116240.0
+true_rejected_s12,2022-06-06,-5,41634,stage12.5,true track rejected by sequence AE,0.66826,0.466372,0.342901,1.0,1.0,343.65,114240.0
+true_rejected_s12,2022-06-06,-5,42576,stage12.5,true track rejected by sequence AE,0.55427,0.128378,0.0,1.0,1.0,477.33,124120.0
+true_rejected_s12,2022-06-06,-5,45722,stage12.5,true track rejected by sequence AE,0.57001,0.49413,0.447395,1.0,1.0,244.82,102870.0
+true_rejected_s12,2022-06-06,-5,46454,stage12.5,true track rejected by sequence AE,0.55762,0.0,0.0,1.0,1.0,398.42,122910.0
+true_rejected_s12,2022-06-06,-5,51975,stage12.5,true track rejected by sequence AE,0.51893,0.494843,0.372681,1.0,1.0,391.35,130620.0
+true_rejected_s12,2022-06-06,-5,62781,stage12.5,true track rejected by sequence AE,0.5785,0.300663,0.232216,1.0,1.0,394.05,111470.0
+true_rejected_s12,2022-06-06,-5,82573,stage12.5,true track rejected by sequence AE,0.71008,0.467227,0.389077,1.0,1.0,356.99,113650.0
+true_rejected_s12,2022-06-06,-5,89065,stage12.5,true track rejected by sequence AE,0.54758,0.123517,0.0,1.0,1.0,473.8,121610.0
+true_kept_s12_rejected_vae,2022-06-06,-5,2857,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.67636,0.647288,0.45565,1.0,1.0,346.5,101250.0
+true_kept_s12_rejected_vae,2022-06-06,-5,10399,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.59268,0.536002,0.210028,1.0,1.0,473.28,113940.0
+true_kept_s12_rejected_vae,2022-06-06,-5,31232,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.75052,0.677392,0.446385,1.0,1.0,513.02,117200.0
+true_kept_s12_rejected_vae,2022-06-06,-5,31923,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.6052,0.625744,0.482418,1.0,1.0,310.8,95800.0
+true_kept_s12_rejected_vae,2022-06-06,-5,33357,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.68006,0.512021,0.377104,1.0,1.0,393.24,117920.0
+true_kept_s12_rejected_vae,2022-06-06,-5,37429,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.64935,0.605859,0.48484,1.0,1.0,445.84,104000.0
+true_kept_s12_rejected_vae,2022-06-06,-5,43811,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.75143,0.609148,0.471665,1.0,1.0,334.02,100180.0
+true_kept_s12_rejected_vae,2022-06-06,-5,45279,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.6142,0.607846,0.469928,1.0,1.0,360.75,121560.0
+true_kept_s12_rejected_vae,2022-06-06,-5,103137,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.66997,0.682113,0.402422,1.0,1.0,411.62,117910.0
+true_kept_s12_rejected_vae,2022-06-06,-5,131796,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.59645,0.565342,0.476975,1.0,1.0,297.08,118160.0
+true_kept_s12_rejected_vae,2022-06-06,-5,145377,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.76366,0.626664,0.400038,1.0,1.0,108.98,10288.0
+true_kept_s12_rejected_vae,2022-06-06,-5,164259,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.68424,0.609354,0.416951,1.0,1.0,309.39,110060.0
+true_kept_s12_rejected_vae,2022-06-06,-5,190325,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.57271,0.653562,0.445355,1.0,1.0,448.26,126970.0
+true_kept_s12_rejected_vae,2022-06-06,-5,190869,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.72654,0.694493,0.491571,1.0,1.0,291.61,106720.0
+true_kept_s12_rejected_vae,2022-06-06,-5,192215,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.74812,0.670905,0.466868,1.0,1.0,359.61,100840.0
+true_kept_s12_rejected_vae,2022-06-06,-5,198246,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.76693,0.603068,0.421238,1.0,1.0,324.71,111900.0
+true_kept_s12_rejected_vae,2022-06-06,-5,198572,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.61825,0.536412,0.486612,1.0,1.0,449.52,111660.0
+true_kept_s12_rejected_vae,2022-06-06,-5,199629,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.6708,0.583581,0.335177,1.0,1.0,360.92,106920.0
+true_kept_s12_rejected_vae,2022-06-06,-5,200468,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.62522,0.563442,0.368115,1.0,1.0,348.93,105610.0
+true_kept_s12_rejected_vae,2022-06-06,-5,200469,stage12.5 vs stage13,true track kept by sequence AE but rejected by VAE,0.47714,0.564243,0.344731,1.0,1.0,373.55,123010.0
+vae_latent_outlier_true,2022-06-06,-5,1261,stage13,true track with outlier VAE latent norm,0.56983,0.0,0.0,0.85,0.85,180.27,15911.0
+vae_latent_outlier_true,2022-06-06,-5,4029,stage13,true track with outlier VAE latent norm,0.6364,0.371791,0.116211,1.0,1.0,343.4,95409.0
+vae_latent_outlier_true,2022-06-06,-5,5457,stage13,true track with outlier VAE latent norm,0.71554,0.510024,0.581789,1.0,1.0,342.51,108720.0
+vae_latent_outlier_true,2022-06-06,-5,6836,stage13,true track with outlier VAE latent norm,0.52696,0.131367,0.146205,0.92308,0.92308,365.76,98459.0
+vae_latent_outlier_true,2022-06-06,-5,10399,stage13,true track with outlier VAE latent norm,0.59268,0.536002,0.210028,1.0,1.0,473.28,113940.0
+vae_latent_outlier_true,2022-06-06,-5,17640,stage13,true track with outlier VAE latent norm,0.61786,0.0,0.0,1.0,1.0,300.85,97423.0
+vae_latent_outlier_true,2022-06-06,-5,23025,stage13,true track with outlier VAE latent norm,0.6628,0.695265,0.612584,1.0,1.0,430.76,120900.0
+vae_latent_outlier_true,2022-06-06,-5,38655,stage13,true track with outlier VAE latent norm,0.70385,0.565478,0.605968,1.0,1.0,382.94,113920.0
+vae_latent_outlier_true,2022-06-06,-5,149681,stage13,true track with outlier VAE latent norm,0.54517,0.591041,0.590327,1.0,1.0,406.97,108840.0
+vae_latent_outlier_true,2022-06-06,-5,151702,stage13,true track with outlier VAE latent norm,0.52881,0.552691,0.618599,1.0,1.0,455.5,118370.0
+vae_latent_outlier_true,2022-06-06,-5,162586,stage13,true track with outlier VAE latent norm,0.71555,0.480524,0.510087,1.0,1.0,420.2,111560.0
+vae_latent_outlier_true,2022-06-06,-5,181444,stage13,true track with outlier VAE latent norm,0.60325,0.319777,0.364306,1.0,1.0,432.04,121290.0
+vae_latent_outlier_true,2022-06-06,-5,202640,stage13,true track with outlier VAE latent norm,0.5886,0.195745,0.156328,1.0,1.0,386.76,124220.0
+vae_latent_outlier_true,2022-06-06,-5,203671,stage13,true track with outlier VAE latent norm,0.88042,0.939297,0.880529,1.0,1.0,174.92,58040.0
+vae_latent_outlier_true,2022-06-06,-5,204745,stage13,true track with outlier VAE latent norm,0.61585,0.4642,0.353647,1.0,1.0,391.85,124160.0
+vae_latent_outlier_true,2022-06-06,-5,204886,stage13,true track with outlier VAE latent norm,0.69854,1.0,1.0,0.97059,0.97059,75.638,14716.0
+vae_latent_outlier_true,2022-06-06,-5,208539,stage13,true track with outlier VAE latent norm,0.6423,0.66148,0.56905,1.0,1.0,405.09,102660.0
+vae_latent_outlier_true,2022-06-06,-5,210973,stage13,true track with outlier VAE latent norm,0.57877,0.491276,0.468758,1.0,1.0,280.32,111980.0
+vae_latent_outlier_true,2022-06-06,-5,212088,stage13,true track with outlier VAE latent norm,0.76854,0.220516,0.0,0.95652,0.95652,140.55,30401.0
+vae_latent_outlier_true,2022-06-06,-5,212293,stage13,true track with outlier VAE latent norm,0.83941,0.505192,0.554637,1.0,1.0,464.19,90904.0
