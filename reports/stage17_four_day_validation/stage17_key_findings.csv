@@ -1,0 +1,7 @@
+finding_id,finding,evidence_file,metric,value,interpretation
+F1,Stage 12.5 validated only on available days,four_day_summary_overall.csv,pooled_false_reduction / pooled_true_retention,0.995 / 0.978,only 1 of 4 days scored; multi-day gap NOT fully closed
+F2,MLP vs GRU robustness,model_comparison_mlp_vs_gru.csv,aggregate false_reduction winner,mlp_dae,MLP and GRU are close; the aggregate winner leads on mean false reduction
+F3,Stage 12 vs Stage 09 across days,interpretable_fallback_comparison.csv,cells where stage12 false_reduction > stage09,4/4,stage-12 generally removes more false tracks; stage-09 stays interpretable fallback
+F4,Low thresholds remain the best use case,four_day_summary_by_threshold.csv,false_reduction at lowest threshold,1.0,the worst-clutter low thresholds are where the filter removes the most false tracks
+F5,Windowability caveat affects high thresholds,windowability_four_day_audit.csv,9/12 dB windowable false tracks,~0,high thresholds have few/no windowable false tracks; kept audit-only
+F6,Remaining single-day limitation,four_day_summary_by_day.csv,n_days_scored,1,STILL OPEN: run the missing stage-08/09/12.5 days (see run_plan.csv)

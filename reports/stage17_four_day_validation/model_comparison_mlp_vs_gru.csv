@@ -1,0 +1,26 @@
+date,threshold_db,metric,mlp_dae,gru_ae,winner,difference,notes
+2022-06-06,-5.0,true_track_retention,0.9874077717658633,0.9851451057550418,mlp_dae,0.002262666010821479,
+2022-06-06,-5.0,false_track_reduction,1.0,0.9817073170731708,mlp_dae,0.018292682926829174,
+2022-06-06,-5.0,precision_after,1.0,0.9998502321401828,mlp_dae,0.00014976785981724028,
+2022-06-06,-5.0,stage12_kept_false_tracks,0.0,3.0,mlp_dae,-3.0,
+2022-06-06,-5.0,stage12_kept_true_tracks,20074.0,20028.0,mlp_dae,46.0,
+2022-06-06,0.0,true_track_retention,0.9812891802651098,0.980236397569029,mlp_dae,0.0010527826960807785,
+2022-06-06,0.0,false_track_reduction,0.9375,0.9375,tie,0.0,
+2022-06-06,0.0,precision_after,0.9999512361632612,0.9999511837930192,mlp_dae,5.23702420318628e-08,
+2022-06-06,0.0,stage12_kept_false_tracks,1.0,1.0,tie,0.0,
+2022-06-06,0.0,stage12_kept_true_tracks,20506.0,20484.0,mlp_dae,22.0,
+2022-06-06,3.0,true_track_retention,0.9713205984366102,0.9703887767251644,mlp_dae,0.0009318217114457905,
+2022-06-06,3.0,false_track_reduction,1.0,1.0,tie,0.0,
+2022-06-06,3.0,precision_after,1.0,1.0,tie,0.0,
+2022-06-06,3.0,stage12_kept_false_tracks,0.0,0.0,tie,0.0,
+2022-06-06,3.0,stage12_kept_true_tracks,18763.0,18745.0,mlp_dae,18.0,
+2022-06-06,6.0,true_track_retention,0.971142236174837,0.9713837237382276,gru_ae,-0.00024148756339059663,
+2022-06-06,6.0,false_track_reduction,1.0,1.0,tie,0.0,
+2022-06-06,6.0,precision_after,1.0,1.0,tie,0.0,
+2022-06-06,6.0,stage12_kept_false_tracks,0.0,0.0,tie,0.0,
+2022-06-06,6.0,stage12_kept_true_tracks,16086.0,16090.0,gru_ae,-4.0,
+ALL,,true_track_retention,0.9777899466606051,0.9767885009468656,mlp_dae,0.0010014457137395016,aggregate mean
+ALL,,false_track_reduction,0.984375,0.9798018292682927,mlp_dae,0.004573170731707266,aggregate mean
+ALL,,precision_after,0.9999878090408153,0.9999503539833005,mlp_dae,3.745505751484579e-05,aggregate mean
+ALL,,stage12_kept_false_tracks,0.25,1.0,mlp_dae,-0.75,aggregate mean
+ALL,,stage12_kept_true_tracks,18857.25,18836.75,mlp_dae,20.5,aggregate mean

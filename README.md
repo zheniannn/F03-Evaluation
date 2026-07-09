@@ -603,6 +603,60 @@ reports. Run Stage 16 **before final report packaging or a broader model
 zoo** — it establishes whether the stage-12.5 result is stable enough to
 build on.
 
+## Stage 17 — Four-day validation
+
+Closes the single-day gap flagged by Stage 16: does the selected **Stage 12.5**
+method (deterministic sequence autoencoder, track-purity calibration) hold
+across **all four ADS-B days** (2022-06-06/13/20/27) at thresholds −5/0/3/6 dB?
+It **adds no new model** and retrains nothing; it consolidates per-day
+stage-08/09/12.5 results and, only when `--run-missing-*` is passed, calls the
+existing stage-08/09/12 scripts to generate any missing day/threshold outputs.
+It validates two primary models (`mlp_dae`, `gru_ae`) with Stage 09 hand physics
+as the interpretable fallback and Stage 08 Kalman-only as the denominator
+baseline; 9/12 dB stay audit-only (windowability caveat). VAE/diffusion are
+referenced as prior findings, not rerun.
+
+It writes an input-availability matrix, a **run plan** with the exact commands
+for anything missing, four-day stage-08/09 context, four-day stage-12 metrics,
+per-day / per-threshold / overall summaries, an MLP-vs-GRU comparison, a
+stage-09 fallback comparison, a windowability audit, a failure-case rollup, a
+key-findings table, eight plots, and a report that states whether the single-day
+limitation is **closed** or **still open**.
+
+- **Inputs:** the stage-08/09/12/14 report dirs; optionally
+  `data/active/tracks_kalman/` + stage-12 checkpoints for `--run-missing-*`.
+- **Outputs:** `reports/stage17_four_day_validation/` — 14 CSVs, the report, and
+  eight plots.
+
+```bash
+# consolidation only (no reruns)
+python scripts/17_four_day_validation.py \
+  --stage08-dir reports/stage08_kalman_baseline \
+  --stage09-dir reports/stage09_physics_scoring \
+  --stage12-dir reports/stage12_sequence_priors \
+  --tracks-dir data/active/tracks_kalman \
+  --models-dir models/sequence_priors \
+  --output-dir reports/stage17_four_day_validation \
+  --date 2022-06-06 2022-06-13 2022-06-20 2022-06-27 \
+  --threshold-db -5 0 3 6 \
+  --overwrite
+```
+
+```bash
+# optional: actually generate the missing days (expensive; stage-6 detections
+# and stage-12 checkpoints must exist locally)
+python scripts/17_four_day_validation.py \
+  --date 2022-06-06 2022-06-13 2022-06-20 2022-06-27 \
+  --threshold-db -5 0 3 6 \
+  --run-missing-stage08 --run-missing-stage09 --run-missing-stage12 \
+  --overwrite
+```
+
+`--dry-run` writes only the availability matrix and run plan; `--self-test`
+runs on tiny synthetic reports. When all four days are present the report
+declares the single-day limitation **closed**; otherwise it stays **open** and
+the run plan lists exactly what to run.
+
 ## Audit
 
 `scripts/06_audit_relocated_experiment.py` is the read-only audit of the

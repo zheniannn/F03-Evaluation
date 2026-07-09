@@ -1,0 +1,3 @@
+case_type,date,threshold_db,model,count,median_range_m,median_score,notes
+false_survives_s12,2022-06-06,0,mlp_dae,1,5792.4,1.0,
+true_rejected_s12,2022-06-06,-5,mlp_dae,20,113705.0,0.359728,
